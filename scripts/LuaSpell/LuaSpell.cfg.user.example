@@ -1,0 +1,97 @@
+﻿--------------------------------------------------------------------------------
+local F = far.Flags
+local Flag4BIT = bit64.bor(F.FCF_FG_4BIT, F.FCF_BG_4BIT)
+
+----------------------------------------
+local CharEnum = [[A-Za-zÀ-ÖØ-ßà-öø-ÿĀ-ʯḀ-ỿА-Яа-яЁёЎўЄєЇї΄-Ͽἀ-῿_0-9́`]]
+--local CharEnum = [[A-Za-zÀ-ÖØ-ßà-öø-ÿĀ-ʯḀ-ỿА-Яа-яЁёЎўЄєЇї΄-Ͽἀ-῿_0-9́\-‑]]
+local CharsSet = "["..CharEnum.."]+"
+local NonesSet = "[^"..CharEnum.."]"
+
+----------------------------------------
+
+local function DicMatch (dic, word, line, p, l)
+  --dic.word = word:gsub("́", "") -- Очистка слова
+  local word = word:gsub("́", "") -- Очистка слова
+  dic.word = word:gsub("`", "'") -- Замена апострофа
+  --far.Show(dic.word)
+  return true
+end -- DicMatch
+
+local DictionaryPath = [[%FARPROFILE%\Dictionaries\]]
+local UserDictPath = DictionaryPath..[[custom\]]
+
+----------------------------------------
+Data = {
+  -- Settings:
+  Enabled = false,
+
+  Path = DictionaryPath,
+
+  CharsSet = CharsSet,
+  InnerSet = CharsSet.."$",
+  StartSet = "^"..CharsSet,
+  CheckSet = "/\\b"..CharsSet.."\\b/",
+  --CheckSet = "(?<="..NonesSet..")"..CharsSet.."(?="..NonesSet..")",
+
+  ColorPrio = 199,
+
+  MacroKeys = {
+    CheckSpell  = "CtrlF12",
+    Misspelling = "ShiftF12",
+    SwitchCheck = "CtrlShiftF12",
+  },
+
+  -- Dictionaries:
+  { lng = "rus",
+    desc = "Russian",
+    Type = "UserDict",
+    path = UserDictPath,
+    filename = "User_Dict",
+    match = DicMatch,
+    Enabled = true,
+
+    BreakOnMatch = true,
+  },
+  { lng = "rus",
+    desc = "Russian",
+    Type = "Hunspell",
+    filename = "ru_RU_yo",
+    find = [[/[А-Яа-яЁё]{2,}/]],
+    match = DicMatch,
+    color = {
+      Flags = Flag4BIT,
+      ForegroundColor = 0xF,
+      BackgroundColor = 0x4,
+    },
+    Enabled = true,
+  },
+  { lng = "eng",
+    desc = "English",
+    Type = "Hunspell",
+    filename = "en_US",
+    find = [[/[A-Za-z]{2,}/]],
+    match = DicMatch,
+    color = {
+      Flags = Flag4BIT,
+      ForegroundColor = 0xF,
+      BackgroundColor = 0x5,
+    },
+    Enabled = true,
+  },
+  { lng = "grk",
+    desc = "Greek",
+    Type = "Hunspell",
+    filename = "el_GR",
+    find = [[/[΄-Ͽἀ-῿]{2,}/]],
+    match = DicMatch,
+    color = {
+      Flags = Flag4BIT,
+      ForegroundColor = 0xF,
+      BackgroundColor = 0x6,
+    },
+    Enabled = true,
+  },
+
+} --
+--------------------------------------------------------------------------------

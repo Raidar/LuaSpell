@@ -1,0 +1,15 @@
+*\.svn\
+*\.git\
+.gitignore
+README
+TODO.rdm
+LuaSpell.bat
+LuaSpell.exc
+*.7z
+*_.*
+*__.*
+*.cfg
+*.log
+*.lua_
+*.new
+*.old
