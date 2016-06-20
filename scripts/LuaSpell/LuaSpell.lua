@@ -41,10 +41,14 @@
 local useprofiler = false
 --local useprofiler = true
 
+local actprofiler
 if useprofiler then
   require "profiler" -- Lua Profiler
   actprofiler = false
 end
+
+----------------------------------------
+local tostring = tostring
 
 ----------------------------------------
 local regex = regex
@@ -74,7 +78,9 @@ local function ExpandEnv (s)
 end
 
 ---------------------------------------- config
-local CfgName = [[%FARPROFILE%\data\macros\]]..unit.ScriptName..".cfg"
+local CfgNameFmt = [[%%FARPROFILE%%\%s\%s\%s.cfg]]
+local CfgName = CfgNameFmt:format(win.GetEnv("FARUSERDATADIR") or "data",
+                                  "macros", unit.ScriptName)
 local DictionaryPath = [[%FARPROFILE%\Dictionaries\]]
 --local UserDictPath = DictionaryPath..[[custom\]]
 
@@ -123,7 +129,10 @@ local DefCfgData = {
     lng = "rus",                        -- Язык
     desc = "Russian",                   -- Описание
     Type = "Hunspell",                  -- Тип
-    filename = "ru_RU_yo",              -- Название файла без расширения
+    filename = "ru_RU_yo",              -- Имя файла без расширения
+    --masks = {  },                     -- Маски имён файлов для проверки
+                                        --   Формат аналогичен полю masks
+                                        --   в context\cfg\types_config.lua
     find = [[/[А-Яа-яЁё]+/]],           -- Regexp для предварительной проверки
     match = true,                       -- Функция для предварительной проверки
     color = {                           -- Цвет для раскрашивания ошибочных слов
@@ -183,7 +192,7 @@ local function CreateMain (ArgData)
   end
 
   for k = 1, n do
-    v = config[k]
+    local v = config[k]
     if type(v.match) == 'boolean' and v.match then
       v.match = DefMatch
     end
@@ -443,8 +452,8 @@ function unit.Free ()
 end ---- Free
 
 ---------------------------------------- Find
+-- from LF context (context\scripts\detectType.lua):
 
--- from LF context (detectType.lua):
 local pcall = pcall
 -- Mask & first line find function.
 local sfind = ('').cfind -- Slow but char positions return
@@ -495,22 +504,26 @@ local function ShowMenu (strings, wordLen)
   local r = info.CurLine - info.TopScreenLine
   local x = math.max(0, c - w - menuOverheadWidth + menuShadowWidth)
   x = (info.WindowSizeX - c) > (c + 2 - wordLen) and (c + 1) or x -- меню справа или слева от слова?
+
   local y = 0
   if (info.WindowSizeY - r - 1) > (r + 1) then -- меню сверху или снизу?
     -- снизу
     y = r + 2
     h = info.WindowSizeY - y + 1 - menuOverheadHeight
     h = math.min(h, #strings)
+
   else
     -- сверху
     y = r - #strings - 1
     if y < 1 then y = 1 end
     h = r - y - 1
+
   end
 
   -- fix menu width
   if (x + w + menuOverheadWidth) > info.WindowSizeX then
     w = info.WindowSizeX - x - menuOverheadWidth
+
   end
 
   local Form = {
@@ -653,11 +666,12 @@ end -- RemoveColors
 unit.RemoveColors = RemoveColors
 
 do
-  local Far_WinInfo = F.ACTL_GETWINDOWINFO
-  local WinType_Editor = F.WTYPE_EDITOR
+  local Far_WinCount    = F.ACTL_GETWINDOWCOUNT
+  local Far_WinInfo     = F.ACTL_GETWINDOWINFO
+  local WinType_Editor  = F.WTYPE_EDITOR
 
 function unit.RemoveAllColors ()
-  local Count = far.AdvControl(F.ACTL_GETWINDOWCOUNT, 0, 0)
+  local Count = far.AdvControl(Far_WinCount, 0, 0)
   for i = 1, Count do
     local Info = far.AdvControl(Far_WinInfo, i, 0)
     if Info and Info.Type == WinType_Editor then
@@ -732,8 +746,7 @@ function unit.CheckSpellAll (Info, action)
 
           if matched then
             local h = v.handle
-            if v.handle.spell and
-               not v.handle:spell(v.word) then
+            if h.spell and not h:spell(v.word) then
               if action == "all" then
                 if v.color then
                   AddColor(id, l, spos, send,
