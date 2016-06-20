@@ -6,7 +6,7 @@ local Flag4BIT = bit64.bor(F.FCF_FG_4BIT, F.FCF_BG_4BIT)
 local CharEnum = [[A-Za-zÀ-ÖØ-ßà-öø-ÿĀ-ʯḀ-ỿА-Яа-яЁёЎўЄєЇї΄-Ͽἀ-῿_0-9́`]]
 --local CharEnum = [[A-Za-zÀ-ÖØ-ßà-öø-ÿĀ-ʯḀ-ỿА-Яа-яЁёЎўЄєЇї΄-Ͽἀ-῿_0-9́\-‑]]
 local CharsSet = "["..CharEnum.."]+"
-local NonesSet = "[^"..CharEnum.."]"
+--local NonesSet = "[^"..CharEnum.."]"
 
 ----------------------------------------
 
