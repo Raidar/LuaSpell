@@ -108,6 +108,7 @@ local DefCfgData = {
     CheckSpell  = "CtrlF12",            -- - проверка текущего слова
     Misspelling = "ShiftF12",           -- - переход на следующее ошибочное слово
     SwitchCheck = "CtrlShiftF12",       -- - переключение подсветки ошибочных слов
+    UnloadSpell = "LCtrlLAltShiftF12",  -- - завершение проверки (выгрузка)
   },
 
   -- Dictionaries:
@@ -432,13 +433,13 @@ end -- InitDictionary
 unit.InitDictionary = InitDictionary
 
 function unit.Init ()
-  if unit.Enable then return end
+  if unit.Enabled then return end
 
   for k = 1, config.n do
     InitDictionary(k)
   end
 
-  unit.Enable = true
+  unit.Enabled = true
   --Init = function() end
 end ---- Init
 
@@ -448,7 +449,7 @@ function unit.Free ()
     FreeDictionary(k)
   end
 
-  unit.Enable = false
+  unit.Enabled = false
 end ---- Free
 
 ---------------------------------------- Find
@@ -686,7 +687,7 @@ do
   local AddColor = editor.AddColor
   local Mark_Current = F.ECF_TABMARKCURRENT
 
-function unit.CheckSpellAll (Info, action)
+function unit.CheckSpellText (Info, action)
   local Info = Info
   if not Info then return end
 
@@ -710,21 +711,31 @@ function unit.CheckSpellAll (Info, action)
   local data
   if action == "all" then
     data = RemoveColors(id)
-    data.start  = Info.TopScreenLine
     data.posit  = 1
+    data.step   = 1
+    data.start  = Info.TopScreenLine
     data.finish = math.min(Info.TopScreenLine + Info.WindowSizeY - 1,
                            Info.TotalLines)
+
   elseif action == "next" then
     data = GetEditorData(id)
-    data.start  = Info.CurLine
     data.posit  = Info.CurPos + 1
+    data.step   = 1
+    data.start  = Info.CurLine
     data.finish = Info.TotalLines
+
+  elseif action == "prior" then
+    data = GetEditorData(id)
+    data.posit  = Info.CurPos + 1
+    data.step   = -1
+    data.start  = 1
+    data.finish = Info.CurLine
 
   end
 
   local Regex = regex.new(config.CheckSet)
 
-  for l = data.start, data.finish do
+  for l = data.start, data.finish, data.step do
     local line = EditorGetLine(-1, l, 3)
     local p = data.posit
     data.posit = 1
@@ -742,7 +753,7 @@ function unit.CheckSpellAll (Info, action)
           v.word = word
 
           local matched = CheckMatch(v, fname, line, spos, l)
-          --far.Show("CheckSpellAll", line, spos, v.word, matched)
+          --far.Show("CheckSpellText", line, spos, v.word, matched)
 
           if matched then
             local h = v.handle
@@ -774,12 +785,12 @@ function unit.CheckSpellAll (Info, action)
   end -- for data
 
   return true
-end ---- CheckSpellAll
+end ---- CheckSpellText
 
 end -- do
 
 function unit.Misspelling ()
-  return unit.CheckSpellAll(EditorGetInfo(), "next")
+  return unit.CheckSpellText(EditorGetInfo(), "next")
 end ---- Misspelling
 
 function unit.SwitchCheck ()
@@ -792,8 +803,14 @@ function unit.SwitchCheck ()
   return editor.Redraw()
 end ---- SwitchCheck
 
+function unit.UnloadSpell ()
+  unit.RemoveAllColors()
+
+  unit.Free()
+end
+
 ---------------------------------------- Events
-local CheckSpellAll = unit.CheckSpellAll
+local CheckSpellText = unit.CheckSpellText
 
 do
   local EE_READ     = F.EE_READ
@@ -842,7 +859,7 @@ Event {
 
     elseif event == EE_REDRAW then
       if config.Enabled then
-        CheckSpellAll(EditorGetInfo(), "all")
+        CheckSpellText(EditorGetInfo(), "all")
       end
 
     end
@@ -851,13 +868,9 @@ Event {
 
 Event {
   group = "ExitFAR",
-  description = "Remove all spell colors",
+  description = "LuaSpell: Exit",
 
-  action = function ()
-    unit.RemoveAllColors()
-
-    unit.Free()
-  end,
+  action = unit.UnloadSpell,
 } -- Event "ExitFAR"
 
 end -- do
@@ -866,7 +879,7 @@ if config.MacroKeys.CheckSpell then
 Macro {
   area = "Editor",
   key = config.MacroKeys.CheckSpell,
-  description = "Check spell",
+  description = "LuaSpell: Check spell",
   action = unit.CheckSpell,
 } ---
 end
@@ -875,7 +888,7 @@ if config.MacroKeys.SwitchCheck then
 Macro {
   area = "Editor",
   key = config.MacroKeys.SwitchCheck,
-  description = "Spell on/off",
+  description = "LuaSpell: Spell on/off",
   action = unit.SwitchCheck,
 } ---
 end
@@ -884,8 +897,17 @@ if config.MacroKeys.Misspelling then
 Macro {
   area = "Editor",
   key = config.MacroKeys.Misspelling,
-  description = "Next misspelling",
+  description = "LuaSpell: Next misspelling",
   action = unit.Misspelling,
+} ---
+end
+
+if config.MacroKeys.UnloadSpell then
+Macro {
+  area = "Editor",
+  key = config.MacroKeys.UnloadSpell,
+  description = "LuaSpell: Unload",
+  action = unit.UnloadSpell,
 } ---
 end
 --------------------------------------------------------------------------------
