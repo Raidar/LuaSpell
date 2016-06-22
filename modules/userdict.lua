@@ -33,8 +33,10 @@ function TMain:free ()
 end ---- free
 
 function TMain:match (s)
+  if not s then return end
+
   local h = self.handle
-  if not h or not s then return end
+  if not h then return end
 
   return self.handle[s] or false
 end ---- match
@@ -112,6 +114,10 @@ function TMain:add_dic (dpath, key, n)
     s = f:read('*l') -- next
   end
 end ---- add_dic
+
+function TMain:add_dics (dpath, key, n)
+  -- TODO
+end ---- add_dics
 
 end -- do
 ---------------------------------------- main
