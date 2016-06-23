@@ -1,4 +1,4 @@
-﻿--[[ Lua Hunspell ]]--
+﻿--[[ LuaSpell ]]--
 
 ----------------------------------------
 --[[ description:
@@ -114,7 +114,9 @@ local DefCfgData = {
   -- Dictionaries:
   --[[
   { -- Custom dictionary (OOoUserDict)
-    Type = "UserDict",                  --
+    Type = "UserDict",                  -- Тип
+    WordType = "enabled",               -- Тип слов: разрешённый
+    StrToPath = false,                  -- Функция преобразования пути
     path = UserDictPath,                -- Путь к пользовательским словарям
     filename = "BaseDict",              -- Основной словарь
     dics = { "ExtraDict", },            -- Дополнительные словари
@@ -124,6 +126,24 @@ local DefCfgData = {
 
     BreakOnMatch = true,                -- Успешная проверка
                                         -- при обнаружении слова в словаре
+  },
+  { -- Word list
+    Type = "WordList",                  -- Тип                                
+    WordType = "disabled",              -- Тип слов: запрещённый
+    StrToPath = false,
+    path = UserDictPath,
+    filename = "Stop_List",
+    dicext = ".lst",                    -- Расширение файла (с точкой)
+    dics = { "ExtraList", },
+    match = DicMatch,
+    color = {
+      Flags = Flag4BIT,
+      ForegroundColor = 0xF,
+      BackgroundColor = 0xC,
+    },
+    Enabled = true,
+
+    BreakOnMatch = true,
   },
   --]]
   { -- Hunspell: Russian
@@ -227,29 +247,31 @@ end -- ParseFilePath
 unit.ParseFilePath = ParseFilePath
 
 ---------------------------------------- Str
+function unit.StrToStr (s)
+  return s
+end -- StrToStr
+
 do
   local AnsiCP
   local WCtoMB = win.WideCharToMultiByte
   local U8toU16 = win.Utf8ToUtf16
 
-function unit.ToStr (s)
+function unit.StrToAnsi (s)
   if not AnsiCP then AnsiCP = win.GetACP() end
   return WCtoMB(U8toU16(s), AnsiCP)
-end -- ToStr
+end -- StrToAnsi
 
 end -- do
 ---------------------------------------- Hunspell
 local hunspell = require "hunspell"
-
-do
-  local ToStr = unit.ToStr
 
 local function NewHunspell (k, v)
   if not hunspell then return false end
   
   local v = v
   --local handle, text = hunspell.new(v.affpath, v.dicpath, nil)
-  local handle, text = hunspell.new(ToStr(v.affpath), ToStr(v.dicpath), nil)
+  local handle, text = hunspell.new(v.StrToPath(v.affpath),
+                                    v.StrToPath(v.dicpath), nil)
   if handle then return handle end
 
   far.Message(win.OemToUtf8(text), "hunspell", nil, 'we')
@@ -281,18 +303,6 @@ function unit.InitHunspell (k)
     if not v.handle then return false end
 
     unit.Add_Dic(k)
-    --[[
-    if v.handle.add_dic and
-       type(v.dics) == 'table' then
-      for i, dic in ipairs(v.dics) do
-        local path = ExpandEnv(Path..dic)
-        if CheckFile(path) then
-          v.handle:add_dic(path, "", i)
-          --v.handle:add_dic(ExpandEnv(Path.."custom\\"..dic), "") -- DEBUG only
-        end;
-      end
-    end
-    --]]
 
     return true
   end
@@ -300,19 +310,15 @@ function unit.InitHunspell (k)
   return false
 end -- InitHunspell
 
-end -- do
 ---------------------------------------- UserDict
 local userdict = require "userdict"
-
-do
-  local ToStr = unit.ToStr
 
 local function NewUserDict (k, v)
   if not userdict then return false end
   
   local v = v
   --local handle, text = hunspell.new(v.affpath, v.dicpath, nil)
-  local handle, text = userdict.new(ToStr(v.dicpath), nil)
+  local handle, text = userdict.new(v)
   if handle then return handle end
 
   far.Message(win.OemToUtf8(text), "userdict", nil, 'we')
@@ -326,30 +332,25 @@ function unit.InitUserDict (k)
   local v = config[k]
   local Path = v.path or config.Path
 
-  v.filename = v.filename or tostring(k)
+  --v.filename = v.filename or tostring(k)
   if not v.dicext then v.dicext = ".dic" end
-  if not v.dic then v.dic = v.filename..v.dicext end
+  if not v.dic and v.filename then v.dic = v.filename..v.dicext end
   if v.dic then v.dicpath = ExpandEnv(Path..v.dic) end
+  if v.dicpath and v.dicpath ~= "" then
+    v.Path = v.StrToPath(v.dicpath)
+  end
 
-  if userdict and
-     v.dicpath and CheckFile(v.dicpath) then
+  if userdict then
+    if (v.dicpath or "") ~= "" and
+       not CheckFile(v.dicpath) then
+      return false
+    end
+
     v.handle = NewUserDict(k, v)
 
     if not v.handle then return false end
 
     unit.Add_Dic(k)
-    --[[
-    if v.handle.add_dic and
-       type(v.dics) == 'table' then
-      for i, dic in ipairs(v.dics) do
-        local path = ExpandEnv(Path..dic)
-        if CheckFile(path) then
-          v.handle:add_dic(path, "", i)
-          --v.handle:add_dic(ExpandEnv(Path.."custom\\"..dic), "") -- DEBUG only
-        end
-      end
-    end
-    --]]
 
     --far.Show(v.handle, v.dic, v.find, v.coding)
     --logShow(v, v.filename, "w d2")
@@ -360,7 +361,6 @@ function unit.InitUserDict (k)
   return false
 end -- InitUserDict
 
-end -- do
 ---------------------------------------- Dictionary
 
 function unit.Add_Dic (k)
@@ -378,12 +378,9 @@ function unit.Add_Dic (k)
   for i, dic in ipairs(v.dics) do
     local path = ExpandEnv(Path..dic..Ext)
     if CheckFile(path) then
-      h:add_dic(path, "", i)
-      --h:add_dic(ExpandEnv(Path.."custom\\"..dic), "") -- DEBUG only
+      h:add_dic(v.StrToPath(path), "", i)
     end
   end
-
-  --if h.handle and h.handle["Авдеев"] then far.Show(h.handle["Авдеев"]) end
 
   return true
 end -- Add_Dic
@@ -403,15 +400,24 @@ local function InitDictionary (k)
   local v = config[k]
   --local Path = config.Path
 
+  if v.StrToPath == false then
+    v.StrToPath = unit.StrToStr
+  elseif v.StrToPath == nil or
+         v.StrToPath == true then
+    v.StrToPath = unit.StrToAnsi
+  end
+
   if not v.Type then v.Type = "Hunspell" end
-  local Type = v.Type
+  if not v.WordType then v.WordType = "enabled" end
+  v.allowed = v.WordType == "enabled" --> true/false
 
   --FreeDictionary(k) -- DEBUG only
 
+  local Type = v.Type
   if Type == "Hunspell" then
     unit.InitHunspell(k)
 
-  elseif Type == "UserDict" then
+  elseif Type == "UserDict" or Type == "WordList" then
     unit.InitUserDict(k)
 
   else--if Type == "Custom" then
@@ -753,7 +759,6 @@ function unit.CheckSpellText (Info, action)
           v.word = word
 
           local matched = CheckMatch(v, fname, line, spos, l)
-          --far.Show("CheckSpellText", line, spos, v.word, matched)
 
           if matched then
             local h = v.handle

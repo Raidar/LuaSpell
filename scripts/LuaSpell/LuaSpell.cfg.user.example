@@ -44,8 +44,10 @@ Data = {
 
   -- Dictionaries:
   { lng = "rus",
-    desc = "Russian",
+    desc = "OOoUserDict",
     Type = "UserDict",
+    WordType = "enabled",
+    StrToPath = false,
     path = UserDictPath,
     filename = "User_Dict",
     match = DicMatch,
@@ -53,6 +55,25 @@ Data = {
 
     BreakOnMatch = true,
   },
+  { lng = "rus",
+    desc = "StopList",
+    Type = "WordList",
+    WordType = "disabled",
+    StrToPath = false,
+    path = UserDictPath,
+    filename = "Stop_List",
+    dicext = ".lst",
+    match = DicMatch,
+    color = {
+      Flags = Flag4BIT,
+      ForegroundColor = 0xF,
+      BackgroundColor = 0xC,
+    },
+    Enabled = true,
+
+    BreakOnMatch = true,
+  },
+
   { lng = "rus",
     desc = "Russian",
     Type = "Hunspell",

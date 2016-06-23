@@ -38,18 +38,22 @@ function TMain:match (s)
   local h = self.handle
   if not h then return end
 
-  return self.handle[s] or false
+  return h[s] or false
 end ---- match
 
---[[
 function TMain:spell (s)
   local h = self.handle
   if not h or not s then return end
 
-  local ret = self.handle[s] and 1 or 2
+  local ret = h[s]
+  if self.allowed then
+    ret = ret and 1 or 2
+  else
+    ret = ret and 0 or 2
+  end
+
   return ret ~= 0, ret == 2 and 'warn' or nil
 end ---- spell
---]]
 
 --[[
 function TMain:get_dic_encoding ()
@@ -90,19 +94,24 @@ do
   local io_open = io.open
 
 function TMain:add_dic (dpath, key, n)
+  if not dpath then return end -- Нет пути
+
   local f = io_open(dpath, 'r')
   if not f then return end -- Нет словаря
-  --if dpath:find("Nomo_Kiril", 1, true) then far.Show(dpath, key, n) end
+  --if dpath:find("Stop_List", 1, true) then far.Show(dpath, key, n) end
+
+  local s = ""
 
   -- Пропуск заголовка:
-  local s = ""
-  while s and not s:find("^%-%-%-") do
-    --logShow(s, "Header line")
-    s = f:read('*l')
+  if self.Type == "UserDict" then
+    while s and not s:find("^%-%-%-") do
+      --logShow(s, "Header line")
+      s = f:read('*l')
+    end
+    if s == nil then return end -- Нет слов
   end
-  if s == nil then return end -- Нет слов
 
-  -- Чтение слов:
+  -- Чтение списка слов:
   s = f:read('*l') -- first
   if s == nil then return end -- Нет слов
 
@@ -115,21 +124,39 @@ function TMain:add_dic (dpath, key, n)
   end
 end ---- add_dic
 
-function TMain:add_dics (dpath, key, n)
+function TMain:add_dics (dpath, n)
   -- TODO
 end ---- add_dics
 
 end -- do
 ---------------------------------------- main
 
-function unit.new (path, key)
+-- Create new dictionary context.
+-- Создание нового словарного контекста.
+--[[
+  -- @params:
+  Info  (table) - information:
+    Path     (string) - file path of base dictionary.
+    Type     (string) - dictionary type: UserDict.
+    WordType (string) - word type: enabled/disabled.
+  -- @return:
+  self  (table) - dictionary context.
+--]]
+function unit.new (Info) --> (table)
+  if not Info then return nil end
 
   local self = {
-    handle = {},
+    handle      = {},
+
+    Type        = Info.Type,
+    allowed     = Info.allowed,
   } --- self
 
   setmetatable(self, MMain)
-  self:add_dic(path, key, true)
+
+  if Info.Path then
+    self:add_dic(Info.Path, "", true)
+  end
 
   return self
 end -- new
