@@ -124,10 +124,6 @@ function TMain:add_dic (dpath, key, n)
   end
 end ---- add_dic
 
-function TMain:add_dics (dpath, n)
-  -- TODO
-end ---- add_dics
-
 end -- do
 ---------------------------------------- main
 

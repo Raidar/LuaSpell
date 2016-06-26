@@ -97,10 +97,12 @@ local DefCfgData = {
 
   Path = DictionaryPath,                -- Путь к словарям
 
-  CharsSet = CharsSet,                  -- Множество допустимых символов слова
-  InnerSet = CharsSet.."$",             -- - для проверки в конце строке
-  StartSet = "^"..CharsSet,             -- - для проверки в начале строке
-  CheckSet = "/\\b"..CharsSet.."\\b/",  -- - для проверки в середине строки
+  CharsSet = CharsSet,                  -- Множество допустимых символов
+                                        -- для проверки на наличие слова:
+  InnerSet = CharsSet.."$",             -- - в конце строке
+  StartSet = "^"..CharsSet,             -- - в начале строке
+  CheckSet = "/\\b"..CharsSet.."\\b/",  -- - в середине строки
+  BoundSet = "\\S*",                    -- - с граничными символами
 
   ColorPrio = 199,                      -- Приоритет раскрашивания
 
@@ -119,9 +121,17 @@ local DefCfgData = {
     StrToPath = false,                  -- Функция преобразования пути
     path = UserDictPath,                -- Путь к пользовательским словарям
     filename = "BaseDict",              -- Основной словарь
-    dics = { "ExtraDict", },            -- Дополнительные словари
+                                        -- Дополнительные словари:
+    dics = {                            --   - списком:
+      "ExtraDict",                      --     - имена файлов без расширения
+    },
+    dics = {                            --   - по lua-маске:
+      path  = nil,                      --     - путь к файлам
+      mask  = "^Dict_",                 --     - маска имён файлов с расширением
+      match = nil,                      --     - функция фильтрации имён файлов
+    },
     match = true,                       --
-    --color = nil,                      -- Не используется 
+    --color = nil,                      -- Не используется при WordType = enabled
     Enabled = true,
 
     BreakOnMatch = true,                -- Успешная проверка
@@ -249,7 +259,7 @@ unit.ParseFilePath = ParseFilePath
 ---------------------------------------- Str
 function unit.StrToStr (s)
   return s
-end -- StrToStr
+end ---- StrToStr
 
 do
   local AnsiCP
@@ -259,7 +269,7 @@ do
 function unit.StrToAnsi (s)
   if not AnsiCP then AnsiCP = win.GetACP() end
   return WCtoMB(U8toU16(s), AnsiCP)
-end -- StrToAnsi
+end ---- StrToAnsi
 
 end -- do
 ---------------------------------------- Hunspell
@@ -302,13 +312,13 @@ function unit.InitHunspell (k)
 
     if not v.handle then return false end
 
-    unit.Add_Dic(k)
+    unit.Add_Dics(k)
 
     return true
   end
 
   return false
-end -- InitHunspell
+end ---- InitHunspell
 
 ---------------------------------------- UserDict
 local userdict = require "userdict"
@@ -350,7 +360,7 @@ function unit.InitUserDict (k)
 
     if not v.handle then return false end
 
-    unit.Add_Dic(k)
+    unit.Add_Dics(k)
 
     --far.Show(v.handle, v.dic, v.find, v.coding)
     --logShow(v, v.filename, "w d2")
@@ -359,44 +369,13 @@ function unit.InitUserDict (k)
   end
 
   return false
-end -- InitUserDict
+end ---- InitUserDict
 
 ---------------------------------------- Dictionary
 
-function unit.Add_Dic (k)
-  local k = k
-  local v = config[k]
-
-  local h = v.handle
-  if not h or
-     not h.add_dic or
-     type(v.dics) ~= 'table' then
-    return false
-  end
-
-  local Path, Ext = v.path or config.Path, v.dicext
-  for i, dic in ipairs(v.dics) do
-    local path = ExpandEnv(Path..dic..Ext)
-    if CheckFile(path) then
-      h:add_dic(v.StrToPath(path), "", i)
-    end
-  end
-
-  return true
-end -- Add_Dic
-
-local function FreeDictionary (k)
-  local v = config[k]
-
-  if v.handle then
-    v.handle:free()
-  end
-end -- FreeDictionary
-unit.FreeDictionary = FreeDictionary
-
 local tostring = tostring
 
-local function InitDictionary (k)
+function unit.InitDictionary (k)
   local v = config[k]
   --local Path = config.Path
 
@@ -410,6 +389,12 @@ local function InitDictionary (k)
   if not v.Type then v.Type = "Hunspell" end
   if not v.WordType then v.WordType = "enabled" end
   v.allowed = v.WordType == "enabled" --> true/false
+
+  if v.Visible == false then return end
+
+  if v.Enabled == nil then v.Enabled = true end
+
+  --if not v.Enabled then return end
 
   --FreeDictionary(k) -- DEBUG only
 
@@ -435,8 +420,106 @@ local function InitDictionary (k)
   if not v.handle then
     v.Enabled = nil
   end
-end -- InitDictionary
-unit.InitDictionary = InitDictionary
+end ---- InitDictionary
+
+function unit.FreeDictionary (k)
+  local v = config[k]
+
+  if v.handle then
+    v.handle:free()
+  end
+end ---- FreeDictionary
+
+function unit.Add_Dics (k)
+  local k = k
+  local v = config[k]
+
+  local h = v.handle
+  if not h or
+     not h.add_dic then
+    return
+  end
+
+  local dics = v.dics
+  local tp = type(dics)
+  if tp == 'table' then
+    local Path, Ext = v.path or config.Path, v.dicext
+    for i, dic in ipairs(dics) do
+      local path = ExpandEnv(Path..dic..Ext)
+      if CheckFile(path) then
+        h:add_dic(v.StrToPath(path), "", i)
+      end
+    end
+
+    return unit.Add_DirDics(k, dics.path, dics.mask, dics.match, #dics + 1)
+
+  --elseif then
+  --  return unit.Add_DirDics(k, v.dics_mask, v.dics_match, 1)
+
+  end
+end -- Add_Dics
+
+function unit.Add_DirDics (k, path, mask, match, n)
+  if not mask then
+    return
+  end
+
+  local k = k
+  local v = config[k]
+
+  local h = v.handle
+  if not h or
+     not h.add_dic then
+    return
+  end
+
+  local path = ExpandEnv(path or v.path or config.Path)
+  return unit.Add_ByMask(path, mask, match, h, "", n)
+end ---- Add_DirDics
+
+function unit.Add_ByMask (path, mask, match, handle, key, n)
+  if not path or
+     not mask then
+    return
+  end
+
+  local h = handle
+  if not h or
+     not h.add_dic then
+    return
+  end
+
+  local t = {}
+  local dics = {}
+
+  local function HandleFile (item, fullname)
+    local attrs = item.FileAttributes
+    --t[#t + 1] = item.FileName
+    if not attrs:find("d", 1, true) and
+       not attrs:find("h", 1, true) and
+       item.FileName:find(mask) and
+       (not match or match(item, fullname)) then
+      --t[#t + 1] = item.FileName
+      item.FullName = fullname
+      dics[#dics + 1] = item
+    end
+  end -- HandleFile
+
+  --far.Show(path:gsub("\\$", ""), mask, match, add_dic, key, n)
+  far.RecursiveSearch(path:gsub("\\$", ""), "*", HandleFile, F.FRS_SCANSYMLINK)
+  --far.Show(unpack(t))
+
+  for i, dic in ipairs(dics) do
+    --t[#t + 1] = dic.FullName
+    h:add_dic(dic.FullName, key, n)
+  end
+  --far.Show(unpack(t))
+end ---- Add_ByMask
+
+---------------------------------------- Work
+do
+  local InitDictionary = unit.InitDictionary
+  local FreeDictionary = unit.FreeDictionary
 
 function unit.Init ()
   if unit.Enabled then return end
@@ -458,6 +541,7 @@ function unit.Free ()
   unit.Enabled = false
 end ---- Free
 
+end
 ---------------------------------------- Find
 -- from LF context (context\scripts\detectType.lua):
 
@@ -613,35 +697,40 @@ function unit.CheckSpell ()
 
   for k = 1, config.n do
     local v = config[k]
-    v.Info = Info
-    v.word = word
 
-    --far.Show("CheckSpell", line, word, spos, v.Enabled, v.handle)
+    if v.Enabled then
+      v.Info = Info
+      v.word = word
 
-    local matched = CheckMatch(v, fname, line, spos, l)
-    --far.Show("CheckSpell", line, spos, v.word, matched)
+      --far.Show("CheckSpell", line, word, spos, v.Enabled, v.handle)
 
-    if matched then
-      local h = v.handle
-      local w = v.word
-      if h.suggest and
-         (not h.spell or not h:spell(w)) then
-        local items = h:suggest(w)
-        if #items > 0 then
-          local Index = ShowMenu(items, wLen)
-          if Index then
-            local s = line:sub(1, spos - 1)..
-                      items[Index]..
-                      line:sub(spos + wLen)
-            EditorSetLine(-1, 0, s, eol)
+      local matched = CheckMatch(v, fname, line, spos, l)
+      --far.Show("CheckSpell", line, spos, v.word, matched)
+
+      if matched then
+        local h = v.handle
+        local w = v.word
+        if h.suggest and
+           (not h.spell or not h:spell(w)) then
+          local items = h:suggest(w)
+          if #items > 0 then
+            local Index = ShowMenu(items, wLen)
+            if Index then
+              local s = line:sub(1, spos - 1)..
+                        items[Index]..
+                        line:sub(spos + wLen)
+              EditorSetLine(-1, 0, s, eol)
+            end
           end
+
+          break
         end
 
-        break
-      end
+        if v.BreakOnMatch then break end
+      end -- matched
 
-      if v.BreakOnMatch then break end
-    end -- matched
+    end -- Enabled
+
   end -- for
 
 end ---- CheckSpell
@@ -740,6 +829,8 @@ function unit.CheckSpellText (Info, action)
   end
 
   local Regex = regex.new(config.CheckSet)
+  local Bound = config.BoundSet and
+                regex.new(config.BoundSet)
 
   for l = data.start, data.finish, data.step do
     local line = EditorGetLine(-1, l, 3)
@@ -747,7 +838,7 @@ function unit.CheckSpellText (Info, action)
     data.posit = 1
     while true do
       local spos, send = Regex:find(line, p)
-      if not spos then break end
+      if not spos or spos > send then break end
 
       p = send + 1 -- for next word
       local word = line:sub(spos, send)
@@ -756,36 +847,60 @@ function unit.CheckSpellText (Info, action)
 
         for k = 1, config.n do
           local v = config[k]
-          v.word = word
 
-          local matched = CheckMatch(v, fname, line, spos, l)
+          if v.Enabled then
+            v.word = word
+            local brim = ""
 
-          if matched then
-            local h = v.handle
-            if h.spell and not h:spell(v.word) then
-              if action == "all" then
-                if v.color then
-                  AddColor(id, l, spos, send,
-                           Mark_Current, v.color, prio, guid)
-                end
-
-              elseif action == "next" then
-                Info.CurLine = l
-                Info.CurPos = spos
-                Info.CurTabPos = -1
-                editor.SetPosition(id, Info)
-
-                return true
+            local matched = CheckMatch(v, fname, line, spos, l)
+            if not matched then
+              local bpos, bend = Bound:find(line, p)
+              if bpos and bend >= bpos then
+                brim = line:sub(bpos, bend)
               end
-
-              break
+              if brim ~= "" then
+                local word = v.word
+                v.word = word..brim
+                matched = CheckMatch(v, fname, line, spos, l)
+                v.word = word
+              end
             end
 
-            if v.BreakOnMatch then break end
-          end -- matched
+            if matched then
+              local h = v.handle
+              local isError = h.spell and not h:spell(v.word)
+              if isError and brim ~= "" then
+                isError = not h:spell(v.word..brim)
+              end
+              
+              if isError then
+                if action == "all" then
+                  if v.color then
+                    AddColor(id, l, spos, send,
+                             Mark_Current, v.color, prio, guid)
+                  end
+
+                elseif action == "next" then
+                  Info.CurLine = l
+                  Info.CurPos = spos
+                  Info.CurTabPos = -1
+                  editor.SetPosition(id, Info)
+
+                  return true
+                end
+
+                break
+              end
+
+              if v.BreakOnMatch then break end
+            end -- matched
+
+          end -- Enabled
 
         end -- for
-      end
+
+      end -- word ~= ""
+
     end -- while
   end -- for data
 
