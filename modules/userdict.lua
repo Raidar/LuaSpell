@@ -13,8 +13,6 @@
 --------------------------------------------------------------------------------
 local unit = {}
 
-local lib = false
-
 ---------------------------------------- Main data
 unit.ScriptName = "UserDict"
 
@@ -92,6 +90,8 @@ end ---- remove_word
 --extras
 do
   local io_open = io.open
+  local ssub = string.sub
+  local u8BOM = string.char(0xEF, 0xBB, 0xBF)
 
 function TMain:add_dic (dpath, key, n)
   if not dpath then return end -- Нет пути
@@ -115,13 +115,23 @@ function TMain:add_dic (dpath, key, n)
   s = f:read('*l') -- first
   if s == nil then return end -- Нет слов
 
+  if self.Type == "WordList" then
+    if ssub(s, 1, 3) == u8BOM then
+      s = ssub(s, 4, -1) -- Исключение UTF-8 BOM
+    end
+  end
+
+  --local u = {}
   local t, v = self.handle, n or true
   while s do
     --logShow(s, "Word line")
     t[s] = v
+    --u[#u + 1] = s
 
     s = f:read('*l') -- next
   end
+
+  --if self.Type == "WordList" then far.Show(unpack(u)) end
 end ---- add_dic
 
 end -- do
