@@ -1,5 +1,5 @@
-License of LuaSpell macro
---------------------------
+License of LuaSpell pack
+-------------------------
 
 Copyright (c) Aidar Rakhmatullin 2014-2016
 

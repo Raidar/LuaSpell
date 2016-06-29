@@ -1,8 +1,8 @@
-LuaSpell macro
+LuaSpell
 
 [Info]
-Ver. : 3.2.4.0
-Date : 2016-06-26
+Ver. : 3.2.4.1
+Date : 2016-06-29
 Ware : Freeware
 Lic. : MIT
 Reqs : FAR + LuaFAR v.3.0.4575
@@ -19,6 +19,6 @@ Used : Hunspell
 URL  : http://luapower.com/hunspell
 
 [Anons]
-  Проверка орфографии на основе Hunspell.
+  Проверка орфографии на основе Hunspell и пользовательских словарей.
 
 ―――――――
