@@ -95,55 +95,57 @@ local DefCfgData = {
   ColorGuid = win.Uuid("d7f001ff-7860-4a24-b9ca-37bef603f7bc"),
   PopupGuid = false,
 
-  Path = DictionaryPath,                -- Путь к словарям
+  Path = DictionaryPath,                -- Путь к словарям.
 
-  CharsSet = CharsSet,                  -- Множество допустимых символов
+  CharsSet = CharsSet,                  -- Множество допустимых символов.
                                         -- для проверки на наличие слова:
-  InnerSet = CharsSet.."$",             -- - в конце строке
-  StartSet = "^"..CharsSet,             -- - в начале строке
-  CheckSet = "/\\b"..CharsSet.."\\b/",  -- - в середине строки
-  BoundSet = "\\S*",                    -- - с граничными символами
+  InnerSet = CharsSet.."$",             -- - в конце строке.
+  StartSet = "^"..CharsSet,             -- - в начале строке.
+  CheckSet = "/\\b"..CharsSet.."\\b/",  -- - в середине строки.
+  BoundSet = "\\S*",                    -- - с граничными символами.
 
-  ColorPrio = 199,                      -- Приоритет раскрашивания
+  EmptyList = false,                    -- Возможность пустого списка.
+
+  ColorPrio = 199,                      -- Приоритет раскрашивания.
 
   MacroKeys = {                         -- Клавиши для макросов:
-    CheckSpell  = "CtrlF12",            -- - проверка текущего слова
-    Misspelling = "ShiftF12",           -- - переход на следующее ошибочное слово
-    SwitchCheck = "CtrlShiftF12",       -- - переключение подсветки ошибочных слов
-    UnloadSpell = "LCtrlLAltShiftF12",  -- - завершение проверки (выгрузка)
+    CheckSpell  = "CtrlF12",            -- - проверка текущего слова.
+    Misspelling = "ShiftF12",           -- - переход на следующее ошибочное слово.
+    SwitchCheck = "CtrlShiftF12",       -- - переключение подсветки ошибочных слов.
+    UnloadSpell = "LCtrlLAltShiftF12",  -- - завершение проверки (выгрузка).
   },
 
   -- Dictionaries:
   --[[
   { -- Custom dictionary (OOoUserDict)
-    Type = "UserDict",                  -- Тип
-    WordType = "enabled",               -- Тип слов: разрешённый
-    StrToPath = false,                  -- Функция преобразования пути
-    path = UserDictPath,                -- Путь к пользовательским словарям
-    filename = "BaseDict",              -- Основной словарь
+    Type = "UserDict",                  -- Тип.
+    WordType = "enabled",               -- Тип слов: разрешённый.
+    StrToPath = false,                  -- Функция преобразования пути.
+    path = UserDictPath,                -- Путь к пользовательским словарям.
+    filename = "BaseDict",              -- Основной словарь.
                                         -- Дополнительные словари:
     dics = {                            --   - списком:
-      "ExtraDict",                      --     - имена файлов без расширения
+      "ExtraDict",                      --     - имена файлов без расширения.
     },
     dics = {                            --   - по lua-маске:
-      path  = nil,                      --     - путь к файлам
-      mask  = "^Dict_",                 --     - маска имён файлов с расширением
-      match = nil,                      --     - функция фильтрации имён файлов
+      path  = nil,                      --     - путь к файлам.
+      mask  = "^Dict_",                 --     - маска имён файлов с расширением.
+      match = nil,                      --     - функция фильтрации имён файлов.
     },
     match = true,                       --
-    --color = nil,                      -- Не используется при WordType = enabled
+    --color = nil,                      -- Не используется при WordType = enabled.
     Enabled = true,
 
     BreakOnMatch = true,                -- Успешная проверка
-                                        -- при обнаружении слова в словаре
+                                        -- при обнаружении слова в словаре.
   },
   { -- Word list
-    Type = "WordList",                  -- Тип                                
-    WordType = "disabled",              -- Тип слов: запрещённый
+    Type = "WordList",                  -- Тип.
+    WordType = "disabled",              -- Тип слов: запрещённый.
     StrToPath = false,
     path = UserDictPath,
     filename = "Stop_List",
-    dicext = ".lst",                    -- Расширение файла (с точкой)
+    dicext = ".lst",                    -- Расширение файла (с точкой).
     dics = { "ExtraList", },
     match = DicMatch,
     color = {
@@ -157,16 +159,16 @@ local DefCfgData = {
   },
   --]]
   { -- Hunspell: Russian
-    lng = "rus",                        -- Язык
-    desc = "Russian",                   -- Описание
-    Type = "Hunspell",                  -- Тип
-    filename = "ru_RU_yo",              -- Имя файла без расширения
-    --masks = {  },                     -- Маски имён файлов для проверки
+    lng = "rus",                        -- Язык.
+    desc = "Russian",                   -- Описание.
+    Type = "Hunspell",                  -- Тип.
+    filename = "ru_RU_yo",              -- Имя файла без расширения.
+    --masks = {  },                     -- Маски имён файлов для проверки.
                                         --   Формат аналогичен полю masks
-                                        --   в context\cfg\types_config.lua
-    find = [[/[А-Яа-яЁё]+/]],           -- Regexp для предварительной проверки
-    match = true,                       -- Функция для предварительной проверки
-    color = {                           -- Цвет для раскрашивания ошибочных слов
+                                        --   в context\cfg\types_config.lua.
+    find = [[/^[А-Яа-яЁё]+$/]],         -- Regexp для предварительной проверки.
+    match = true,                       -- Функция для предварительной проверки.
+    color = {                           -- Цвет для раскрашивания ошибочных слов.
       Flags = Flag4BIT,
       ForegroundColor = 0xF,
       BackgroundColor = 0x4,
@@ -174,13 +176,13 @@ local DefCfgData = {
     Enabled = true,
   },
   { -- Hunspell: English
-    lng = "eng",                        -- Language
-    desc = "English",                   -- Description
-    Type = "Hunspell",                  -- Type
-    filename = "en_US",                 -- File name without extension
-    find = [[/[A-Za-z]+/]],             -- Regexp to check preliminary
-    match = true,                       -- Function to check preliminary
-    color = {                           -- Color to colorize wrong words
+    lng = "eng",                        -- Language.
+    desc = "English",                   -- Description.
+    Type = "Hunspell",                  -- Type.
+    filename = "en_US",                 -- File name without extension.
+    find = [[/^[A-Za-z]+$/]],           -- Regexp to check preliminary.
+    match = true,                       -- Function to check preliminary.
+    color = {                           -- Color to colorize wrong words.
       Flags = Flag4BIT,
       ForegroundColor = 0xF,
       BackgroundColor = 0x5,
@@ -277,7 +279,7 @@ local hunspell = require "hunspell"
 
 local function NewHunspell (k, v)
   if not hunspell then return false end
-  
+
   local v = v
   --local handle, text = hunspell.new(v.affpath, v.dicpath, nil)
   local handle, text = hunspell.new(v.StrToPath(v.affpath),
@@ -325,7 +327,7 @@ local userdict = require "userdict"
 
 local function NewUserDict (k, v)
   if not userdict then return false end
-  
+
   local v = v
   --local handle, text = hunspell.new(v.affpath, v.dicpath, nil)
   local handle, text = userdict.new(v)
@@ -372,8 +374,6 @@ function unit.InitUserDict (k)
 end ---- InitUserDict
 
 ---------------------------------------- Dictionary
-
-local tostring = tostring
 
 function unit.InitDictionary (k)
   local v = config[k]
@@ -489,7 +489,7 @@ function unit.Add_ByMask (path, mask, match, handle, key, n)
     return
   end
 
-  local t = {}
+  --local t = {}
   local dics = {}
 
   local function HandleFile (item, fullname)
@@ -509,9 +509,10 @@ function unit.Add_ByMask (path, mask, match, handle, key, n)
   far.RecursiveSearch(path:gsub("\\$", ""), "*", HandleFile, F.FRS_SCANSYMLINK)
   --far.Show(unpack(t))
 
+  local n = n or 1
   for i, dic in ipairs(dics) do
     --t[#t + 1] = dic.FullName
-    h:add_dic(dic.FullName, key, n)
+    h:add_dic(dic.FullName, key, n + i - 1)
   end
   --far.Show(unpack(t))
 end ---- Add_ByMask
@@ -614,8 +615,8 @@ local function ShowMenu (strings, wordLen)
   -- fix menu width
   if (x + w + menuOverheadWidth) > info.WindowSizeX then
     w = info.WindowSizeX - x - menuOverheadWidth
-
   end
+  w = w + 1 -- отступ справа
 
   local Form = {
     { "DI_LISTBOX", 0, 0, w + 3, h + 1, Items, 0, 0, 0, "" }
@@ -654,14 +655,17 @@ local function CheckMatch (cfg, name, line, pos, no) --> (bool | nil)
   if not v.masked then return false end
 
   local matched = not v.match or v:match(v.word, line, pos, no)
+  --if v.word:find("Main", 1, true) then far.Show("CheckMatch: cfg", v.filename, line, spos, v.word, matched) end
 
   local h = v.handle
   if h.match then
     matched = h:match(v.word)
+    --if v.word:find("Main", 1, true) then far.Show("CheckMatch: handle", v.filename, line, spos, v.word, matched) end
   end
 
   if matched then
     matched = not v.regex or v.regex:match(v.word)
+    --if v.word:find("Main", 1, true) then far.Show("CheckMatch: regex", v.filename, line, spos, v.word, matched) end
   end
 
   return matched
@@ -708,12 +712,14 @@ function unit.CheckSpell ()
       --far.Show("CheckSpell", line, spos, v.word, matched)
 
       if matched then
+        --if v.word:find("Main", 1, true) then far.Show("CheckSpell", v.filename, line, spos, v.word, matched) end
         local h = v.handle
         local w = v.word
         if h.suggest and
            (not h.spell or not h:spell(w)) then
+          --if w:find("Main", 1, true) then far.Show("CheckSpell", v.filename, line, spos, w, matched) end
           local items = h:suggest(w)
-          if #items > 0 then
+          if config.EmptyList or #items > 0 then
             local Index = ShowMenu(items, wLen)
             if Index then
               local s = line:sub(1, spos - 1)..
@@ -854,6 +860,7 @@ function unit.CheckSpellText (Info, action)
 
             local matched = CheckMatch(v, fname, line, spos, l)
             if not matched then
+              --if v.word:find("Main", 1, true) then far.Show("CheckSpellText: matched", v.filename, line, spos, v.word, brim, matched) end
               local bpos, bend = Bound:find(line, p)
               if bpos and bend >= bpos then
                 brim = line:sub(bpos, bend)
@@ -863,6 +870,7 @@ function unit.CheckSpellText (Info, action)
                 v.word = word..brim
                 matched = CheckMatch(v, fname, line, spos, l)
                 v.word = word
+                --if v.word:find("Main", 1, true) then far.Show("CheckSpellText: brim", v.filename, line, spos, v.word, brim, matched) end
               end
             end
 
@@ -870,17 +878,20 @@ function unit.CheckSpellText (Info, action)
               local h = v.handle
               local isError = h.spell and not h:spell(v.word)
               if isError and brim ~= "" then
+                --if v.word:find("Main", 1, true) then far.Show("CheckSpellText: spell", v.filename, line, spos, v.word, brim, matched) end
                 isError = not h:spell(v.word..brim)
               end
-              
+
               if isError then
                 if action == "all" then
                   if v.color then
+                    --if v.word:find("Main`", 1, true) then far.Show("CheckSpellText", v.filename, line, spos, v.word, brim, matched) end
                     AddColor(id, l, spos, send,
                              Mark_Current, v.color, prio, guid)
                   end
 
                 elseif action == "next" then
+                  if v.word:find("Main", 1, true) then far.Show("CheckSpellText", v.filename, line, spos, v.word, brim, matched) end
                   Info.CurLine = l
                   Info.CurPos = spos
                   Info.CurTabPos = -1
@@ -972,7 +983,7 @@ Event {
 
     elseif event == EE_GOTFOCUS then
       reloadEditorConfig(eid, 'focus')
-    
+
     elseif event == EE_CLOSE then
       editors.current, editors[eid] = nil, nil
       --if useprofiler and actprofiler then profiler.stop(); actprofiler = false end
