@@ -22,6 +22,10 @@
      URL: http://luapower.com/hunspell
 --]]
 --------------------------------------------------------------------------------
+
+local assert = assert
+
+----------------------------------------
 --local win = win
 
 local ffi = require'ffi'
@@ -167,6 +171,8 @@ function TMain:generate (word, word2)
   return free_list(h, list, n)
 end ---- generate
 
+---------------------------------------- -- word
+
 function TMain:add_word (word, example)
   if example then
     assert(lib.Hunspell_add_with_affix(self.handle, word, example) == 0)
@@ -179,7 +185,9 @@ function TMain:remove_word (word)
   assert(lib.Hunspell_remove(self.handle, word) == 0)
 end ---- remove_word
 
---extras
+---------------------------------------- -- file
+-- extras
+
 function TMain:add_dic (dpath, key)
   --far.Message(self.handle, dpath, key)
   assert(lib.Hunspell_add_dic(self.handle, dpath, key) == 0)
@@ -188,7 +196,7 @@ end ---- add_dic
 ---------------------------------------- main
 
 -- key is for hzip-encrypted dictionary files
-function unit.new (affpath, dicpath, key)
+function unit.create (affpath, dicpath, key)
 
   local isOk, Error = LoadLib()
   if not isOk then return false, Error end
@@ -204,6 +212,16 @@ function unit.new (affpath, dicpath, key)
   } --- self
 
   return setmetatable(self, MMain)
+end -- create
+
+-- key is for hzip-encrypted dictionary files
+function unit.new (Info)
+  if not Info then return nil end
+
+  local self = unit.create(Info.AffPath, Info.DicPath, Info.key)
+  --self.Info = Info
+
+  return self
 end -- new
 
 ---------------------------------------- Test
