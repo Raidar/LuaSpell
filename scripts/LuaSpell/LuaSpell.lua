@@ -51,6 +51,7 @@ end
 local tostring = tostring
 
 ----------------------------------------
+local win = win
 local regex = regex
 
 local F = far.Flags
@@ -110,9 +111,11 @@ local DefCfgData = {
 
   MacroKeys = {                         -- Клавиши для макросов:
     CheckSpell  = "CtrlF12",            -- - проверка текущего слова.
-    Misspelling = "ShiftF12",           -- - переход на следующее ошибочное слово.
-    SwitchCheck = "CtrlShiftF12",       -- - переключение подсветки ошибочных слов.
+    SwitchCheck = "LCtrlLAltF12",       -- - переключение подсветки ошибочных слов.
     UnloadSpell = "LCtrlLAltShiftF12",  -- - завершение проверки (выгрузка).
+                                        -- - поиск и переход:
+    FindNext    = "ShiftF12",           --   - на следующее ошибочное слово.
+    FindPrev    = "LCtrlShiftF12",      --   - на предыдущее ошибочное слово.
   },
 
   -- Dictionaries:
@@ -201,7 +204,8 @@ local function DefMatch ()
   return true
 end -- DefMatch
 
-local function CreateMain (ArgData)
+local function CreateMain ()
+--local function CreateMain (ArgData)
   --ArgData = ArgData or DefCfgData
 
   local chunk, serror = loadfile(ExpandEnv(CfgName))
@@ -213,6 +217,7 @@ local function CreateMain (ArgData)
     if config == nil then config = env.Data end
   end
   if not config then config = {} end
+  --unit.config = config
 
   setmetatable(config, { __index = DefCfgData })
 
@@ -234,11 +239,6 @@ local function CreateMain (ArgData)
   config.n = n
 end -- CreateMain
 
-CreateMain()
-
-----------------------------------------
-local editors = {}
-
 ---------------------------------------- File
 
 local function CheckFile (filename) --> (true | nil)
@@ -259,6 +259,7 @@ end -- ParseFilePath
 unit.ParseFilePath = ParseFilePath
 
 ---------------------------------------- Str
+
 function unit.StrToStr (s)
   return s
 end ---- StrToStr
@@ -280,28 +281,33 @@ local hunspell = require "hunspell"
 local function NewHunspell (k, v)
   if not hunspell then return false end
 
-  local v = v
-  --local handle, text = hunspell.new(v.affpath, v.dicpath, nil)
-  local handle, text = hunspell.new(v.StrToPath(v.affpath),
-                                    v.StrToPath(v.dicpath), nil)
+  local handle, text = hunspell.new(v)
   if handle then return handle end
 
-  far.Message(win.OemToUtf8(text), "hunspell", nil, 'we')
+  far.Message(win.OemToUtf8(text), "hunspell: "..tostring(k or 0), nil, 'we')
   hunspell = false
 
   return false
 end -- NewHunspell
 
 function unit.InitHunspell (k)
-  local k = k
+  --local k = k
   local v = config[k]
   local Path = v.path or config.Path
 
   v.filename = v.filename or v.lng or tostring(k)
+  if not v.Name then v.Name = v.filename end
   if not v.dic then v.dic = v.filename..".dic" end
   if not v.aff then v.aff = v.filename..".aff" end
   if v.dic then v.dicpath = ExpandEnv(Path..v.dic) end
   if v.aff then v.affpath = ExpandEnv(Path..v.aff) end
+
+  if v.dicpath and v.dicpath ~= "" then
+    v.DicPath = v.StrToPath(v.dicpath)
+  end
+  if v.affpath and v.affpath ~= "" then
+    v.AffPath = v.StrToPath(v.affpath)
+  end
 
   if hunspell and
      v.dicpath and CheckFile(v.dicpath) and
@@ -328,28 +334,27 @@ local userdict = require "userdict"
 local function NewUserDict (k, v)
   if not userdict then return false end
 
-  local v = v
-  --local handle, text = hunspell.new(v.affpath, v.dicpath, nil)
   local handle, text = userdict.new(v)
   if handle then return handle end
 
-  far.Message(win.OemToUtf8(text), "userdict", nil, 'we')
-  hunspell = false
+  far.Message(win.OemToUtf8(text), "userdict: "..tostring(k or 0), nil, 'we')
+  userdict = false
 
   return false
 end -- NewUserDict
 
 function unit.InitUserDict (k)
-  local k = k
+  --local k = k
   local v = config[k]
   local Path = v.path or config.Path
 
   --v.filename = v.filename or tostring(k)
+  if not v.Name then v.Name = v.filename end
   if not v.dicext then v.dicext = ".dic" end
   if not v.dic and v.filename then v.dic = v.filename..v.dicext end
   if v.dic then v.dicpath = ExpandEnv(Path..v.dic) end
   if v.dicpath and v.dicpath ~= "" then
-    v.Path = v.StrToPath(v.dicpath)
+    v.DicPath = v.StrToPath(v.dicpath)
   end
 
   if userdict then
@@ -512,18 +517,18 @@ function unit.Add_ByMask (path, mask, match, handle, key, n)
   local n = n or 1
   for i, dic in ipairs(dics) do
     --t[#t + 1] = dic.FullName
-    h:add_dic(dic.FullName, key, n + i - 1)
+    h:add_dic(dic.FullName, key, n + i - 1, dic.FileName)
   end
   --far.Show(unpack(t))
 end ---- Add_ByMask
 
 ---------------------------------------- Work
-do
-  local InitDictionary = unit.InitDictionary
-  local FreeDictionary = unit.FreeDictionary
 
 function unit.Init ()
+  if not config then return end
   if unit.Enabled then return end
+
+  local InitDictionary = unit.InitDictionary
 
   for k = 1, config.n do
     InitDictionary(k)
@@ -534,6 +539,9 @@ function unit.Init ()
 end ---- Init
 
 function unit.Free ()
+  if not config then return end
+
+  local FreeDictionary = unit.FreeDictionary
 
   for k = 1, config.n do
     FreeDictionary(k)
@@ -542,7 +550,6 @@ function unit.Free ()
   unit.Enabled = false
 end ---- Free
 
-end
 ---------------------------------------- Find
 -- from LF context (context\scripts\detectType.lua):
 
@@ -622,14 +629,15 @@ local function ShowMenu (strings, wordLen)
     { "DI_LISTBOX", 0, 0, w + 3, h + 1, Items, 0, 0, 0, "" }
   }
 
-  local function DlgProc (dlg, msg, param1, param2)
-  end -- DlgProc
+  --local function DlgProc (dlg, msg, param1, param2)
+  --end -- DlgProc
 
   local hDlg = far.DialogInit(config.PopupGuid,
                               x, y,
                               x + w + 3,
                               y + h + 1,
-                              nil, Form, 0, DlgProc)
+                              nil, Form, 0)
+                              --nil, Form, 0, DlgProc)
   local Index = far.DialogRun(hDlg) > 0 and
                 far.SendDlgMessage(hDlg, F.DM_LISTGETCURPOS, 1).SelectPos or nil
   far.DialogFree(hDlg)
@@ -742,6 +750,7 @@ function unit.CheckSpell ()
 end ---- CheckSpell
 
 ---------------------------------------- Colorize
+local editors = {}
 
 local function GetEditorData (id)
   local data = editors[id]
@@ -825,14 +834,15 @@ function unit.CheckSpellText (Info, action)
     data.start  = Info.CurLine
     data.finish = Info.TotalLines
 
-  elseif action == "prior" then
+  elseif action == "prev" then
     data = GetEditorData(id)
     data.posit  = Info.CurPos + 1
     data.step   = -1
-    data.start  = 1
-    data.finish = Info.CurLine
+    data.start  = Info.CurLine
+    data.finish = 1
 
   end
+  --far.Show("CheckSpellText", action, data.posit, data.start, data.finish, data.step)
 
   local Regex = regex.new(config.CheckSet)
   local Bound = config.BoundSet and
@@ -849,7 +859,7 @@ function unit.CheckSpellText (Info, action)
       p = send + 1 -- for next word
       local word = line:sub(spos, send)
       if word ~= "" then
-        --far.Show(config.CheckSet, line, word, spos, send)
+        --far.Show("CheckSpellText", config.CheckSet, line, word, spos, send)
 
         for k = 1, config.n do
           local v = config[k]
@@ -890,8 +900,9 @@ function unit.CheckSpellText (Info, action)
                              Mark_Current, v.color, prio, guid)
                   end
 
-                elseif action == "next" then
-                  if v.word:find("Main", 1, true) then far.Show("CheckSpellText", v.filename, line, spos, v.word, brim, matched) end
+                elseif action == "next" or action == "prev" then
+                  --far.Show("CheckSpellText", v.filename, line, spos, v.word, brim, matched)
+                  --if v.word:find("Main", 1, true) then far.Show("CheckSpellText", v.filename, line, spos, v.word, brim, matched) end
                   Info.CurLine = l
                   Info.CurPos = spos
                   Info.CurTabPos = -1
@@ -920,9 +931,13 @@ end ---- CheckSpellText
 
 end -- do
 
-function unit.Misspelling ()
+function unit.FindNext ()
   return unit.CheckSpellText(EditorGetInfo(), "next")
-end ---- Misspelling
+end ---- FindNext
+
+function unit.FindPrev ()
+  return unit.CheckSpellText(EditorGetInfo(), "prev")
+end ---- FindPrev
 
 function unit.SwitchCheck ()
   --far.Show"SwitchCheck"
@@ -939,6 +954,10 @@ function unit.UnloadSpell ()
 
   unit.Free()
 end
+
+---------------------------------------- main
+
+CreateMain()
 
 ---------------------------------------- Events
 local CheckSpellText = unit.CheckSpellText
@@ -976,7 +995,8 @@ Event {
   group = "EditorEvent",
   description = "Check spell all",
 
-  action = function (id, event, param)
+  action = function (id, event)
+  --action = function (id, event, param)
     local eid = id
     if event == EE_READ then
       reloadEditorConfig(eid, 'load')
@@ -1006,30 +1026,23 @@ Event {
 
 end -- do
 ---------------------------------------- Macros
-if config.MacroKeys.CheckSpell then
+local MacroKeys = config.MacroKeys
+
+if MacroKeys.CheckSpell then
 Macro {
   area = "Editor",
-  key = config.MacroKeys.CheckSpell,
+  key = MacroKeys.CheckSpell,
   description = "LuaSpell: Check spell",
   action = unit.CheckSpell,
 } ---
 end
 
-if config.MacroKeys.SwitchCheck then
+if MacroKeys.SwitchCheck then
 Macro {
   area = "Editor",
-  key = config.MacroKeys.SwitchCheck,
+  key = MacroKeys.SwitchCheck,
   description = "LuaSpell: Spell on/off",
   action = unit.SwitchCheck,
-} ---
-end
-
-if config.MacroKeys.Misspelling then
-Macro {
-  area = "Editor",
-  key = config.MacroKeys.Misspelling,
-  description = "LuaSpell: Next misspelling",
-  action = unit.Misspelling,
 } ---
 end
 
@@ -1041,4 +1054,28 @@ Macro {
   action = unit.UnloadSpell,
 } ---
 end
+
+-- DEPRECATED
+if MacroKeys.Misspelling then
+  MacroKeys.FindNext = MacroKeys.Misspelling
+end
+
+if MacroKeys.FindNext then
+Macro {
+  area = "Editor",
+  key = MacroKeys.FindNext,
+  description = "LuaSpell: Find next",
+  action = unit.FindNext,
+} ---
+end
+
+if MacroKeys.FindPrev then
+Macro {
+  area = "Editor",
+  key = MacroKeys.FindPrev,
+  description = "LuaSpell: Find previous",
+  action = unit.FindPrev,
+} ---
+end
+
 --------------------------------------------------------------------------------

@@ -72,8 +72,11 @@ Data = {
 
   MacroKeys = {
     CheckSpell  = "CtrlF12",
-    Misspelling = "ShiftF12",
-    SwitchCheck = "CtrlShiftF12",
+    SwitchCheck = "LCtrlLAltF12",
+    UnloadSpell = "LCtrlLAltShiftF12",
+
+    FindNext    = "ShiftF12",
+    FindPrev    = "LCtrlShiftF12",
   },
 
   -- Dictionaries:
