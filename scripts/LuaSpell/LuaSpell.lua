@@ -98,31 +98,31 @@ local DefCfgData = {
 
   Path = DictionaryPath,                -- Путь к словарям.
 
-  CharsSet = CharsSet,                  -- Множество допустимых символов.
+  CharsSet  = CharsSet,                 -- Множество допустимых символов.
                                         -- для проверки на наличие слова:
-  InnerSet = CharsSet.."$",             -- - в конце строке.
-  StartSet = "^"..CharsSet,             -- - в начале строке.
-  CheckSet = "/\\b"..CharsSet.."\\b/",  -- - в середине строки.
-  BoundSet = "\\S*",                    -- - с граничными символами.
+  InnerSet  = CharsSet.."$",            -- - в конце строке.
+  StartSet  = "^"..CharsSet,            -- - в начале строке.
+  CheckSet  = "/\\b"..CharsSet.."\\b/", -- - в середине строки.
+  BoundSet  = "\\S*",                   -- - с граничными символами.
 
   EmptyList = false,                    -- Возможность пустого списка.
-
   ColorPrio = 199,                      -- Приоритет раскрашивания.
 
   MacroKeys = {                         -- Клавиши для макросов:
     CheckSpell  = "CtrlF12",            -- - проверка текущего слова.
     SwitchCheck = "LCtrlLAltF12",       -- - переключение подсветки ошибочных слов.
     UnloadSpell = "LCtrlLAltShiftF12",  -- - завершение проверки (выгрузка).
-                                        -- - поиск и переход:
-    FindNext    = "ShiftF12",           --   - на следующее ошибочное слово.
-    FindPrev    = "LCtrlShiftF12",      --   - на предыдущее ошибочное слово.
+                                        -- - поиск и переход на:
+    FindNext    = "ShiftF12",           --   - следующее ошибочное слово.
+    FindPrev    = "LCtrlShiftF12",      --   - предыдущее ошибочное слово.
   },
 
   -- Dictionaries:
   --[[
-  { -- Custom dictionary (OOoUserDict)
+  { -- Custom dictionary (OOoUserDict):
     Type = "UserDict",                  -- Тип.
     WordType = "enabled",               -- Тип слов: разрешённый.
+    WordCase = "none",                  -- Регистр букв слов: без изменения.
     StrToPath = false,                  -- Функция преобразования пути.
     path = UserDictPath,                -- Путь к пользовательским словарям.
     filename = "BaseDict",              -- Основной словарь.
@@ -142,9 +142,10 @@ local DefCfgData = {
     BreakOnMatch = true,                -- Успешная проверка
                                         -- при обнаружении слова в словаре.
   },
-  { -- Word list
+  { -- Word list:
     Type = "WordList",                  -- Тип.
     WordType = "disabled",              -- Тип слов: запрещённый.
+    WordCase = "lower",                 -- Регистр букв слов: в нижний регистр.
     StrToPath = false,
     path = UserDictPath,
     filename = "Stop_List",
@@ -161,7 +162,7 @@ local DefCfgData = {
     BreakOnMatch = true,
   },
   --]]
-  { -- Hunspell: Russian
+  { -- Hunspell (Russian):
     lng = "rus",                        -- Язык.
     desc = "Russian",                   -- Описание.
     Type = "Hunspell",                  -- Тип.
@@ -178,7 +179,7 @@ local DefCfgData = {
     },
     Enabled = true,
   },
-  { -- Hunspell: English
+  { -- Hunspell (English):
     lng = "eng",                        -- Language.
     desc = "English",                   -- Description.
     Type = "Hunspell",                  -- Type.
@@ -391,9 +392,14 @@ function unit.InitDictionary (k)
     v.StrToPath = unit.StrToAnsi
   end
 
-  if not v.Type then v.Type = "Hunspell" end
-  if not v.WordType then v.WordType = "enabled" end
+  v.Type = v.Type or "Hunspell"
+  if not v.WordType or
+     v.Type == "Hunspell" then
+    v.WordType = "enabled"
+  end
   v.allowed = v.WordType == "enabled" --> true/false
+
+  v.WordCase = v.WordCase or "none"
 
   if v.Visible == false then return end
 
@@ -567,7 +573,7 @@ local function pfind (s, pattern) --> (number, number | nil)
   if isOk then return findpos, findend end -- Успешный поиск
 end -- pfind
 
-local function checkValueOver (value, values)
+local function checkValueOver (value, values) --> (len | nil)
   if not values then return nil end
   if type(values) == 'string' then values = { values } end
 
@@ -646,6 +652,47 @@ local function ShowMenu (strings, wordLen)
 end -- ShowMenu
 
 ---------------------------------------- Spell
+
+-- Check file for masks.
+-- Проверка файла по маскам.
+--[[
+-- @params:
+  cfg   (table) - config.
+  name (string) - file name.
+--]]
+local function CheckMasks (cfg, name) --> (bool | nil)
+  local v = cfg
+  if not v then return nil end
+  if not v.Enabled or not v.handle then return false end
+
+  return not v.masks or
+         (checkValueOver(name, v.masks) and true or false)
+end -- CheckMasks
+unit.CheckMasks = CheckMasks
+
+-- Change word by case.
+-- Преобразование слова по регистру букв.
+local function ChangeCase (cfg, line, pos, no) --> (bool, bool | nil)
+  local v = cfg
+  --if not v then return nil end
+  --if not v.Enabled or not v.handle then return false end
+
+  local WordCase = v.WordCase
+  if WordCase == "lower" then
+    v.word = v.word:lower()
+  elseif WordCase == "upper" then
+    v.word = v.word:upper()
+  elseif type(WordCase) == 'function' then
+    v:WordCase(cfg, line, pos, no)
+  else
+    return true, false
+  end
+
+  return true, true -- changed
+end -- ChangeCase
+
+-- Check word for match.
+-- Проверка слова на соответствие.
 --[[
 -- @params:
   cfg   (table) - config.
@@ -654,29 +701,31 @@ end -- ShowMenu
   pos  (number) - word position in file line.
   no   (number) - file line number
 --]]
-local function CheckMatch (cfg, name, line, pos, no) --> (bool | nil)
+local function CheckMatch (cfg, line, pos, no) --> (bool | nil)
   local v = cfg
-  if not v then return nil end
-  if not v.Enabled or not v.handle then return false end
+  --if not v then return nil end
+  --if not v.Enabled or not v.handle then return false end
 
-  v.masked = not v.masks or (checkValueOver(name, v.masks) and true)
-  if not v.masked then return false end
-
-  local matched = not v.match or v:match(v.word, line, pos, no)
-  --if v.word:find("Main", 1, true) then far.Show("CheckMatch: cfg", v.filename, line, spos, v.word, matched) end
+  if v.match and
+     not v:match(v.word, line, pos, no) then
+    --if v.word:find("Main", 1, true) then far.Show("CheckMatch: cfg", v.filename, line, spos, v.word, matched) end
+    return false
+  end
 
   local h = v.handle
-  if h.match then
-    matched = h:match(v.word)
+  if h.match and
+     not h:match(v.word) then
     --if v.word:find("Main", 1, true) then far.Show("CheckMatch: handle", v.filename, line, spos, v.word, matched) end
+    return false
   end
 
-  if matched then
-    matched = not v.regex or v.regex:match(v.word)
+  if v.regex and
+     not v.regex:match(v.word) then
     --if v.word:find("Main", 1, true) then far.Show("CheckMatch: regex", v.filename, line, spos, v.word, matched) end
+    return false
   end
 
-  return matched
+  return true
 end -- CheckMatch
 unit.CheckMatch = CheckMatch
 
@@ -701,22 +750,22 @@ function unit.CheckSpell ()
     spos = p - slab:len()
     word = slab..tail
   end
+  if word == "" then return end
 
   --far.Show("CheckSpell", line, word, spos)
 
-  local wLen = word:len()
-  if word == "" then return end
-
   for k = 1, config.n do
     local v = config[k]
+    v.masked = CheckMasks(v, fname)
 
-    if v.Enabled then
-      v.Info = Info
+    if v.masked then
+      --v.Info = Info
       v.word = word
 
       --far.Show("CheckSpell", line, word, spos, v.Enabled, v.handle)
 
-      local matched = CheckMatch(v, fname, line, spos, l)
+      local matched = ChangeCase(v, line, spos, l) and
+                      CheckMatch(v, line, spos, l)
       --far.Show("CheckSpell", line, spos, v.word, matched)
 
       if matched then
@@ -730,9 +779,10 @@ function unit.CheckSpell ()
           if config.EmptyList or #items > 0 then
             local Index = ShowMenu(items, wLen)
             if Index then
+              local send = spos + word:len()
               local s = line:sub(1, spos - 1)..
                         items[Index]..
-                        line:sub(spos + wLen)
+                        line:sub(send, -1)
               EditorSetLine(-1, 0, s, eol)
             end
           end
@@ -813,8 +863,8 @@ function unit.CheckSpellText (Info, action)
 
   for k = 1, config.n do
     local v = config[k]
-    v.Info = Info
-    v.masked = not v.masks or (checkValueOver(fname, v.masks) and true)
+    --v.Info = Info
+    v.masked = CheckMasks(v, fname)
   end
 
   local action = action or "all"
@@ -864,35 +914,47 @@ function unit.CheckSpellText (Info, action)
         for k = 1, config.n do
           local v = config[k]
 
-          if v.Enabled then
+          if v.masked then
             v.word = word
-            local brim = ""
+            v.brim = ""
 
-            local matched = CheckMatch(v, fname, line, spos, l)
+            local bpos, bend -- for brim find
+
+            local matched = ChangeCase(v, line, spos, l) and
+                            CheckMatch(v, line, spos, l)
             if not matched then
-              --if v.word:find("Main", 1, true) then far.Show("CheckSpellText: matched", v.filename, line, spos, v.word, brim, matched) end
-              local bpos, bend = Bound:find(line, p)
+              --if v.word:find("лит", 1, true) then far.Show("CheckSpellText: matched", v.filename, line, spos, v.word, v.brim, matched) end
+              bpos, bend = Bound:find(line, p)
               if bpos and bend >= bpos then
-                brim = line:sub(bpos, bend)
+                v.brim = line:sub(bpos, bend)
               end
-              if brim ~= "" then
+              if v.brim ~= "" then
                 local word = v.word
-                v.word = word..brim
-                matched = CheckMatch(v, fname, line, spos, l)
-                v.word = word
-                --if v.word:find("Main", 1, true) then far.Show("CheckSpellText: brim", v.filename, line, spos, v.word, brim, matched) end
+                v.word = word..v.brim
+                matched = ChangeCase(v, line, spos, l) and
+                          CheckMatch(v, line, spos, l)
+                v.word = word -- (restore)
+
+                --if v.word:find("лит", 1, true) then far.Show("CheckSpellText: brim", v.filename, line, spos, v.word, v.brim, matched) end
               end
             end
 
             if matched then
               local h = v.handle
-              local isError = h.spell and not h:spell(v.word)
-              if isError and brim ~= "" then
-                --if v.word:find("Main", 1, true) then far.Show("CheckSpellText: spell", v.filename, line, spos, v.word, brim, matched) end
-                isError = not h:spell(v.word..brim)
+              local isOk = not h.spell or h:spell(v.word)
+              --if v.word:find("лит", 1, true) then far.Show("CheckSpellText: spell", v.filename, line, spos, v.word, v.brim, matched) end
+              if v.brim ~= "" then
+                --if v.word:find("лит", 1, true) then far.Show("CheckSpellText: spell", v.filename, line, spos, v.word, v.brim, matched) end
+                local asOk = h:spell(v.word..v.brim)
+                if asOk then
+                  isOk = asOk -- word with brim
+                  p = bend + 1 -- skip brim also
+                else
+                  p = send + 1 -- skip word only
+                end
               end
 
-              if isError then
+              if not isOk then
                 if action == "all" then
                   if v.color then
                     --if v.word:find("Main`", 1, true) then far.Show("CheckSpellText", v.filename, line, spos, v.word, brim, matched) end
