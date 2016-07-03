@@ -15,7 +15,7 @@ function TTexDic:free ()
 end ---- spell
 
 local function newTexDic (dic)
-  
+
   local self = {
     dic = dic,
     --handle = h,
@@ -63,11 +63,12 @@ Data = {
 
   Path = [[%FARPROFILE%\Dictionaries\]],
 
-  CharsSet = CharsSet,
-  InnerSet = CharsSet.."$",
-  StartSet = "^"..CharsSet,
-  CheckSet = "/"..CharsSet.."/",
+  CharsSet  = CharsSet,
+  InnerSet  = CharsSet.."$",
+  StartSet  = "^"..CharsSet,
+  CheckSet  = "/"..CharsSet.."/",
 
+  EmptyList = false,
   ColorPrio = 199,
 
   MacroKeys = {

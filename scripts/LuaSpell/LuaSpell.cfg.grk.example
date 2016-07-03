@@ -19,11 +19,12 @@ Data = {
 
   Path = [[%FARPROFILE%\Dictionaries\]],
 
-  CharsSet = CharsSet,
-  InnerSet = CharsSet.."$",
-  StartSet = "^"..CharsSet,
-  CheckSet = "/\\b"..CharsSet.."\\b/",
+  CharsSet  = CharsSet,
+  InnerSet  = CharsSet.."$",
+  StartSet  = "^"..CharsSet,
+  CheckSet  = "/\\b"..CharsSet.."\\b/",
 
+  EmptyList = false,
   ColorPrio = 199,
 
   MacroKeys = {

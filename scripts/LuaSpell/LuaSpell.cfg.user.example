@@ -28,12 +28,13 @@ Data = {
 
   Path = DictionaryPath,
 
-  CharsSet = CharsSet,
-  InnerSet = CharsSet.."$",
-  StartSet = "^"..CharsSet,
-  CheckSet = "/\\b"..CharsSet.."\\b/",
-  --CheckSet = "(?<="..NonesSet..")"..CharsSet.."(?="..NonesSet..")",
+  CharsSet  = CharsSet,
+  InnerSet  = CharsSet.."$",
+  StartSet  = "^"..CharsSet,
+  CheckSet  = "/\\b"..CharsSet.."\\b/",
+  --CheckSet  = "(?<="..NonesSet..")"..CharsSet.."(?="..NonesSet..")",
 
+  EmptyList = false,
   ColorPrio = 199,
 
   MacroKeys = {
