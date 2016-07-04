@@ -780,9 +780,10 @@ function unit.CheckSpell ()
           --if w:find("Main", 1, true) then far.Show("CheckSpell", v.filename, line, spos, w, matched) end
           local items = h:suggest(w)
           if config.EmptyList or #items > 0 then
+            local wLen = word:len()
             local Index = ShowMenu(items, wLen)
             if Index then
-              local send = spos + word:len()
+              local send = spos + wLen
               local s = line:sub(1, spos - 1)..
                         items[Index]..
                         line:sub(send, -1)
