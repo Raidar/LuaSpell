@@ -104,6 +104,7 @@ local DefCfgData = {
   StartSet  = "^"..CharsSet,            -- - в начале строке.
   CheckSet  = "/\\b"..CharsSet.."\\b/", -- - в середине строки.
   BoundSet  = "\\S*",                   -- - с граничными символами.
+  BoundCut  = "\\W",                    -- Символ для усечения BoundSet.
 
   EmptyList = false,                    -- Возможность пустого списка.
   ColorPrio = 199,                      -- Приоритет раскрашивания.
@@ -458,6 +459,7 @@ function unit.Add_Dics (k)
     for i, dic in ipairs(dics) do
       local path = ExpandEnv(Path..dic..Ext)
       if CheckFile(path) then
+        --if dic == "Vort_Media" then far.Show(dic) end
         h:add_dic(v.StrToPath(path), "", i)
       end
     end
@@ -523,6 +525,7 @@ function unit.Add_ByMask (path, mask, match, handle, key, n)
   local n = n or 1
   for i, dic in ipairs(dics) do
     --t[#t + 1] = dic.FullName
+    --if dic.FullName:find("Vort_Media", 1, true) then far.Show(dic.FullName) end
     h:add_dic(dic.FullName, key, n + i - 1, dic.FileName)
   end
   --far.Show(unpack(t))
@@ -861,12 +864,6 @@ function unit.CheckSpellText (Info, action)
 
   local _, fname = ParseFilePath(Info.FileName)
 
-  for k = 1, config.n do
-    local v = config[k]
-    --v.Info = Info
-    v.masked = CheckMasks(v, fname)
-  end
-
   local action = action or "all"
   local data
   if action == "all" then
@@ -894,10 +891,22 @@ function unit.CheckSpellText (Info, action)
   end
   --far.Show("CheckSpellText", action, data.posit, data.start, data.finish, data.step)
 
+  local masked = false
+  for k = 1, config.n do
+    local v = config[k]
+    --v.Info = Info
+    v.masked = CheckMasks(v, fname)
+    if v.masked then masked = true end
+  end
+  if not masked then return false end
+
   local Regex = regex.new(config.CheckSet)
   local Bound = config.BoundSet and
                 regex.new(config.BoundSet)
+  local Cuted = config.BoundCut and
+                regex.new(config.BoundCut)
 
+   -- TODO: extract to function CheckSpellData
   for l = data.start, data.finish, data.step do
     local line = EditorGetLine(-1, l, 3)
     local p = data.posit
@@ -907,13 +916,14 @@ function unit.CheckSpellText (Info, action)
       if not spos or spos > send then break end
 
       p = send + 1 -- for next word
-      local word = line:sub(spos, send)
+      local word = line:sub(spos, send) or ""
       if word ~= "" then
         --far.Show("CheckSpellText", config.CheckSet, line, word, spos, send)
 
         for k = 1, config.n do
           local v = config[k]
 
+          -- TODO: extract to function CheckConfigSpell
           if v.masked then
             v.word = word
             v.brim = ""
@@ -926,13 +936,38 @@ function unit.CheckSpellText (Info, action)
               --if v.word:find("лит", 1, true) then far.Show("CheckSpellText: matched", v.filename, line, spos, v.word, v.brim, matched) end
               bpos, bend = Bound:find(line, p)
               if bpos and bend >= bpos then
-                v.brim = line:sub(bpos, bend)
+                v.brim = line:sub(bpos, bend) or ""
               end
-              if v.brim ~= "" then
+
+              local brim = v.brim
+              if brim ~= "" then
                 local word = v.word
-                v.word = word..v.brim
+
+                v.word = word..brim
                 matched = ChangeCase(v, line, spos, l) and
                           CheckMatch(v, line, spos, l)
+
+                if not matched and Cuted then
+                  local c = 0
+                  while not matched do
+                    local cpos, cend = Cuted:find(brim, -1)
+                    if not cpos or cpos > cend then break end
+
+                    c = c + 1
+                    brim = brim:sub(1, -2) or ""
+                    if brim == "" then break end
+
+                    v.word = word..brim
+                    matched = ChangeCase(v, line, spos, l) and
+                              CheckMatch(v, line, spos, l)
+                  end -- while
+
+                  if matched then
+                    v.brim = brim
+                    bend = bpos + brim:len() -- TODO: CHECK
+                  end
+                end
+
                 v.word = word -- (restore)
 
                 --if v.word:find("лит", 1, true) then far.Show("CheckSpellText: brim", v.filename, line, spos, v.word, v.brim, matched) end
@@ -943,9 +978,10 @@ function unit.CheckSpellText (Info, action)
               local h = v.handle
               local isOk = not h.spell or h:spell(v.word)
               --if v.word:find("лит", 1, true) then far.Show("CheckSpellText: spell", v.filename, line, spos, v.word, v.brim, matched) end
-              if v.brim ~= "" then
+              local brim = v.brim
+              if brim ~= "" then
                 --if v.word:find("лит", 1, true) then far.Show("CheckSpellText: spell", v.filename, line, spos, v.word, v.brim, matched) end
-                local asOk = h:spell(v.word..v.brim)
+                local asOk = h:spell(v.word..brim)
                 if asOk then
                   isOk = asOk -- word with brim
                   p = bend + 1 -- skip brim also
