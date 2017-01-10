@@ -45,6 +45,7 @@ local actprofiler
 if useprofiler then
   require "profiler" -- Lua Profiler
   actprofiler = false
+
 end
 
 ----------------------------------------
@@ -76,6 +77,7 @@ unit.ScriptName = "LuaSpell"
 ---------------------------------------- utils
 local function ExpandEnv (s)
   return s:gsub("%%(.-)%%", win.GetEnv)
+
 end
 
 ---------------------------------------- config
@@ -89,6 +91,7 @@ local CharEnum = [[A-Za-zА-Яа-яЁё_0-9́]]
 local CharsSet = "["..CharEnum.."]+"
 
 local DefCfgData = {
+
   -- Settings:
   Enabled = false,
 
@@ -116,6 +119,7 @@ local DefCfgData = {
                                         -- - поиск и переход на:
     FindNext    = "ShiftF12",           --   - следующее ошибочное слово.
     FindPrev    = "LCtrlShiftF12",      --   - предыдущее ошибочное слово.
+
   },
 
   -- Dictionaries:
@@ -138,11 +142,13 @@ local DefCfgData = {
     },
     match = true,                       --
     --color = nil,                      -- Не используется при WordType = enabled.
+
     Enabled = true,
 
     BreakOnMatch = true,                -- Успешная проверка
                                         -- при обнаружении слова в словаре.
   },
+
   { -- Word list:
     Type = "WordList",                  -- Тип.
     WordType = "disabled",              -- Тип слов: запрещённый.
@@ -157,12 +163,16 @@ local DefCfgData = {
       Flags = Flag4BIT,
       ForegroundColor = 0xF,
       BackgroundColor = 0xC,
+
     },
+
     Enabled = true,
 
     BreakOnMatch = true,
+
   },
   --]]
+
   { -- Hunspell (Russian):
     lng = "rus",                        -- Язык.
     desc = "Russian",                   -- Описание.
@@ -177,9 +187,13 @@ local DefCfgData = {
       Flags = Flag4BIT,
       ForegroundColor = 0xF,
       BackgroundColor = 0x4,
+
     },
+
     Enabled = true,
+
   },
+
   { -- Hunspell (English):
     lng = "eng",                        -- Language.
     desc = "English",                   -- Description.
@@ -191,8 +205,11 @@ local DefCfgData = {
       Flags = Flag4BIT,
       ForegroundColor = 0xF,
       BackgroundColor = 0x5,
+
     },
+
     Enabled = true,
+
   },
 
 } --- DefCfgData
@@ -203,11 +220,14 @@ DefCfgData.PopupGuid = DefCfgData.Guid
 local config
 
 local function DefMatch ()
+
   return true
+
 end -- DefMatch
 
 local function CreateMain ()
 --local function CreateMain (ArgData)
+
   --ArgData = ArgData or DefCfgData
 
   local chunk, serror = loadfile(ExpandEnv(CfgName))
@@ -215,9 +235,12 @@ local function CreateMain ()
   if chunk then
     local env = { __index = _G }
     setmetatable(env, env)
+
     config, serror = setfenv(chunk, env)()
     if config == nil then config = env.Data end
+
   end
+
   if not config then config = {} end
   --unit.config = config
 
@@ -228,6 +251,7 @@ local function CreateMain ()
     n = #DefCfgData
     --for k = 1, n do
     --  config[k] = DefCfgData[k]
+
     --end
   end
 
@@ -235,35 +259,44 @@ local function CreateMain ()
     local v = config[k]
     if type(v.match) == 'boolean' and v.match then
       v.match = DefMatch
+
     end
   end
 
   config.n = n
+
 end -- CreateMain
 
 ---------------------------------------- File
 
 local function CheckFile (filename) --> (true | nil)
+
   local file = io.open(filename, "rb")
   if not file then return end
   file:close()
 
   return true
+
 end -- CheckFile
 unit.CheckFile = CheckFile
 
 local PathNamePattern = '^(.-)([^\\/]+)$'
 
 local function ParseFilePath (path) --> (path, name)
+
   if not path then return end
+
   return path:match(PathNamePattern)
+
 end -- ParseFilePath
 unit.ParseFilePath = ParseFilePath
 
 ---------------------------------------- Str
 
 function unit.StrToStr (s)
+
   return s
+
 end ---- StrToStr
 
 do
@@ -272,8 +305,11 @@ do
   local U8toU16 = win.Utf8ToUtf16
 
 function unit.StrToAnsi (s)
+
   if not AnsiCP then AnsiCP = win.GetACP() end
+
   return WCtoMB(U8toU16(s), AnsiCP)
+
 end ---- StrToAnsi
 
 end -- do
@@ -281,6 +317,7 @@ end -- do
 local hunspell = require "hunspell"
 
 local function NewHunspell (k, v)
+
   if not hunspell then return false end
 
   local handle, text = hunspell.new(v)
@@ -290,10 +327,11 @@ local function NewHunspell (k, v)
   hunspell = false
 
   return false
+
 end -- NewHunspell
 
 function unit.InitHunspell (k)
-  --local k = k
+
   local v = config[k]
   local Path = v.path or config.Path
 
@@ -306,9 +344,11 @@ function unit.InitHunspell (k)
 
   if v.dicpath and v.dicpath ~= "" then
     v.DicPath = v.StrToPath(v.dicpath)
+
   end
   if v.affpath and v.affpath ~= "" then
     v.AffPath = v.StrToPath(v.affpath)
+
   end
 
   if hunspell and
@@ -325,15 +365,18 @@ function unit.InitHunspell (k)
     unit.Add_Dics(k)
 
     return true
-  end
+
+  end -- if
 
   return false
+
 end ---- InitHunspell
 
 ---------------------------------------- UserDict
 local userdict = require "userdict"
 
 local function NewUserDict (k, v)
+
   if not userdict then return false end
 
   local handle, text = userdict.new(v)
@@ -343,10 +386,11 @@ local function NewUserDict (k, v)
   userdict = false
 
   return false
+
 end -- NewUserDict
 
 function unit.InitUserDict (k)
-  --local k = k
+
   local v = config[k]
   local Path = v.path or config.Path
 
@@ -357,12 +401,14 @@ function unit.InitUserDict (k)
   if v.dic then v.dicpath = ExpandEnv(Path..v.dic) end
   if v.dicpath and v.dicpath ~= "" then
     v.DicPath = v.StrToPath(v.dicpath)
+
   end
 
   if userdict then
     if (v.dicpath or "") ~= "" and
        not CheckFile(v.dicpath) then
       return false
+
     end
 
     v.handle = NewUserDict(k, v)
@@ -375,28 +421,34 @@ function unit.InitUserDict (k)
     --logShow(v, v.filename, "w d2")
 
     return true
-  end
+
+  end -- if
 
   return false
+
 end ---- InitUserDict
 
 ---------------------------------------- Dictionary
 
 function unit.InitDictionary (k)
+
   local v = config[k]
   --local Path = config.Path
 
   if v.StrToPath == false then
     v.StrToPath = unit.StrToStr
+
   elseif v.StrToPath == nil or
          v.StrToPath == true then
     v.StrToPath = unit.StrToAnsi
+
   end
 
   v.Type = v.Type or "Hunspell"
   if not v.WordType or
      v.Type == "Hunspell" then
     v.WordType = "enabled"
+
   end
   v.allowed = v.WordType == "enabled" --> true/false
 
@@ -420,6 +472,7 @@ function unit.InitDictionary (k)
   else--if Type == "Custom" then
     if type(v.new) == 'function' then
       v.handle = v:new()
+
     end
     --far.Show(k, v.handle)
 
@@ -427,29 +480,34 @@ function unit.InitDictionary (k)
 
   if v.handle and v.find then
     v.regex = regex.new(v.find)
+
   end
 
   if not v.handle then
     v.Enabled = nil
+
   end
 end ---- InitDictionary
 
 function unit.FreeDictionary (k)
+
   local v = config[k]
 
   if v.handle then
     v.handle:free()
+
   end
 end ---- FreeDictionary
 
 function unit.Add_Dics (k)
-  local k = k
+
   local v = config[k]
 
   local h = v.handle
   if not h or
      not h.add_dic then
     return
+
   end
 
   local dics = v.dics
@@ -461,6 +519,7 @@ function unit.Add_Dics (k)
       if CheckFile(path) then
         --if dic == "Vort_Media" then far.Show(dic) end
         h:add_dic(v.StrToPath(path), "", i)
+
       end
     end
 
@@ -473,41 +532,49 @@ function unit.Add_Dics (k)
 end -- Add_Dics
 
 function unit.Add_DirDics (k, path, mask, match, n)
+
   if not mask then
     return
+
   end
 
-  local k = k
   local v = config[k]
 
   local h = v.handle
   if not h or
      not h.add_dic then
     return
+
   end
 
-  local path = ExpandEnv(path or v.path or config.Path)
+  path = ExpandEnv(path or v.path or config.Path)
   return unit.Add_ByMask(path, mask, match, h, "", n)
+
 end ---- Add_DirDics
 
 function unit.Add_ByMask (path, mask, match, handle, key, n)
+
   if not path or
      not mask then
     return
+
   end
 
   local h = handle
   if not h or
      not h.add_dic then
     return
+
   end
 
   --local t = {}
   local dics = {}
 
   local function HandleFile (item, fullname)
+
     local attrs = item.FileAttributes
     --t[#t + 1] = item.FileName
+
     if not attrs:find("d", 1, true) and
        not attrs:find("h", 1, true) and
        item.FileName:find(mask) and
@@ -515,6 +582,7 @@ function unit.Add_ByMask (path, mask, match, handle, key, n)
       --t[#t + 1] = item.FileName
       item.FullName = fullname
       dics[#dics + 1] = item
+
     end
   end -- HandleFile
 
@@ -522,18 +590,22 @@ function unit.Add_ByMask (path, mask, match, handle, key, n)
   far.RecursiveSearch(path:gsub("\\$", ""), "*", HandleFile, F.FRS_SCANSYMLINK)
   --far.Show(unpack(t))
 
-  local n = n or 1
+  n = n or 1
   for i, dic in ipairs(dics) do
     --t[#t + 1] = dic.FullName
     --if dic.FullName:find("Vort_Media", 1, true) then far.Show(dic.FullName) end
     h:add_dic(dic.FullName, key, n + i - 1, dic.FileName)
+
   end
+
   --far.Show(unpack(t))
+
 end ---- Add_ByMask
 
 ---------------------------------------- Work
 
 function unit.Init ()
+
   if not config then return end
   if unit.Enabled then return end
 
@@ -541,22 +613,28 @@ function unit.Init ()
 
   for k = 1, config.n do
     InitDictionary(k)
+
   end
 
   unit.Enabled = true
+
   --Init = function() end
+
 end ---- Init
 
 function unit.Free ()
+
   if not config then return end
 
   local FreeDictionary = unit.FreeDictionary
 
   for k = 1, config.n do
     FreeDictionary(k)
+
   end
 
   unit.Enabled = false
+
 end ---- Free
 
 ---------------------------------------- Find
@@ -570,13 +648,16 @@ local sfind = ('').cfind -- Slow but char positions return
 -- Protected find of pattern.
 -- Защищённый поиск паттерна.
 local function pfind (s, pattern) --> (number, number | nil)
+
   if not s then return end
 
   local isOk, findpos, findend = pcall(sfind, s, pattern)
   if isOk then return findpos, findend end -- Успешный поиск
+
 end -- pfind
 
 local function checkValueOver (value, values) --> (len | nil)
+
   if not values then return nil end
   if type(values) == 'string' then values = { values } end
 
@@ -585,6 +666,7 @@ local function checkValueOver (value, values) --> (len | nil)
     local findpos, findend = pfind(value, v)
     if findpos then
       return findend - findpos + 1, v -- + 1 for real length
+
     end
   end
 end -- checkValueOver
@@ -593,6 +675,7 @@ end -- checkValueOver
 local tinsert = table.insert
 
 local function ShowMenu (strings, wordLen)
+
   local info = EditorGetInfo()
 
   local menuShadowWidth = 2
@@ -605,6 +688,7 @@ local function ShowMenu (strings, wordLen)
     local v = strings[k]
     w = math.max(w, v:len())
     tinsert(Items, { Flags = 0, Text = v })
+
   end
 
   local h = 1
@@ -631,12 +715,15 @@ local function ShowMenu (strings, wordLen)
   -- fix menu width
   if (x + w + menuOverheadWidth) > info.WindowSizeX then
     w = info.WindowSizeX - x - menuOverheadWidth
+
   end
   w = w + 1 -- отступ справа
 
   local Form = {
+
     { "DI_LISTBOX", 0, 0, w + 3, h + 1, Items, 0, 0, 0, "" }
-  }
+
+  } --- Form
 
   --local function DlgProc (dlg, msg, param1, param2)
   --end -- DlgProc
@@ -652,6 +739,7 @@ local function ShowMenu (strings, wordLen)
   far.DialogFree(hDlg)
 
   return Index
+
 end -- ShowMenu
 
 ---------------------------------------- Spell
@@ -664,18 +752,21 @@ end -- ShowMenu
   name (string) - file name.
 --]]
 local function CheckMasks (cfg, name) --> (bool | nil)
+
   local v = cfg
   if not v then return nil end
   if not v.Enabled or not v.handle then return false end
 
   return not v.masks or
          (checkValueOver(name, v.masks) and true or false)
+
 end -- CheckMasks
 unit.CheckMasks = CheckMasks
 
 -- Change word by case.
 -- Преобразование слова по регистру букв.
 local function ChangeCase (cfg, line, pos, no) --> (bool, bool | nil)
+
   local v = cfg
   --if not v then return nil end
   --if not v.Enabled or not v.handle then return false end
@@ -683,15 +774,20 @@ local function ChangeCase (cfg, line, pos, no) --> (bool, bool | nil)
   local WordCase = v.WordCase
   if WordCase == "lower" then
     v.word = v.word:lower()
+
   elseif WordCase == "upper" then
     v.word = v.word:upper()
+
   elseif type(WordCase) == 'function' then
     v:WordCase(cfg, line, pos, no)
+
   else
     return true, false
+
   end
 
   return true, true -- changed
+
 end -- ChangeCase
 
 -- Check word for match.
@@ -705,34 +801,55 @@ end -- ChangeCase
   no   (number) - file line number
 --]]
 local function CheckMatch (cfg, line, pos, no) --> (bool | nil)
+
   local v = cfg
   --if not v then return nil end
   --if not v.Enabled or not v.handle then return false end
 
   if v.match and
      not v:match(v.word, line, pos, no) then
-    --if v.word:find("Main", 1, true) then far.Show("CheckMatch: cfg", v.filename, line, spos, v.word, matched) end
+    --[[
+    if v.word:find("Main", 1, true) then
+      far.Show("CheckMatch: cfg", v.filename, line, spos, v.word, matched)
+    end
+    --]]
+
     return false
+
   end
 
   local h = v.handle
   if h.match and
      not h:match(v.word) then
-    --if v.word:find("Main", 1, true) then far.Show("CheckMatch: handle", v.filename, line, spos, v.word, matched) end
+    --[[
+    if v.word:find("Main", 1, true) then
+      far.Show("CheckMatch: handle", v.filename, line, spos, v.word, matched)
+    end
+    --]]
+
     return false
+
   end
 
   if v.regex and
      not v.regex:match(v.word) then
-    --if v.word:find("Main", 1, true) then far.Show("CheckMatch: regex", v.filename, line, spos, v.word, matched) end
+    --[[
+    if v.word:find("Main", 1, true) then
+      far.Show("CheckMatch: regex", v.filename, line, spos, v.word, matched)
+    end
+    --]]
+
     return false
+
   end
 
   return true
+
 end -- CheckMatch
 unit.CheckMatch = CheckMatch
 
 function unit.CheckSpell ()
+
   local Info = EditorGetInfo()
   if not Info then return end
 
@@ -752,6 +869,7 @@ function unit.CheckSpell ()
     local tail = s:sub(p, -1):match(config.StartSet) or ""
     spos = p - slab:len()
     word = slab..tail
+
   end
   if word == "" then return end
 
@@ -788,6 +906,7 @@ function unit.CheckSpell ()
                         items[Index]..
                         line:sub(send, -1)
               EditorSetLine(-1, 0, s, eol)
+  
             end
           end
 
@@ -795,6 +914,7 @@ function unit.CheckSpell ()
         end
 
         if v.BreakOnMatch then break end
+
       end -- matched
 
     end -- Enabled
@@ -807,26 +927,33 @@ end ---- CheckSpell
 local editors = {}
 
 local function GetEditorData (id)
+
   local data = editors[id]
   if not data then
     editors[id] = { start = 0, finish = -1, }
     data = editors[id]
+
   end
 
   return data
+
 end ---- GetEditorData
 unit.GetEditorData = GetEditorData
 
 local function RemoveColors (id)
+
   local data = GetEditorData(id)
   local guid = config.ColorGuid
   for l = data.start, data.finish do
     editor.DelColor(id, l, 0, guid)
+
   end
 
   data.start  = 0
   data.finish = -1
+
   return data
+
 end -- RemoveColors
 unit.RemoveColors = RemoveColors
 
@@ -836,11 +963,13 @@ do
   local WinType_Editor  = F.WTYPE_EDITOR
 
 function unit.RemoveAllColors ()
+
   local Count = far.AdvControl(Far_WinCount, 0, 0)
   for i = 1, Count do
     local Info = far.AdvControl(Far_WinInfo, i, 0)
     if Info and Info.Type == WinType_Editor then
       RemoveColors(Info.Id)
+
     end
   end
 end ---- RemoveAllColors
@@ -852,7 +981,7 @@ do
   local Mark_Current = F.ECF_TABMARKCURRENT
 
 function unit.CheckSpellText (Info, action)
-  local Info = Info
+
   if not Info then return end
 
   unit.Init()
@@ -865,7 +994,8 @@ function unit.CheckSpellText (Info, action)
 
   local _, fname = ParseFilePath(Info.FileName)
 
-  local action = action or "all"
+  action = action or "all"
+
   local data
   if action == "all" then
     data = RemoveColors(id)
@@ -898,6 +1028,7 @@ function unit.CheckSpellText (Info, action)
     --v.Info = Info
     v.masked = CheckMasks(v, fname)
     if v.masked then masked = true end
+
   end
   if not masked then return false end
 
@@ -934,10 +1065,17 @@ function unit.CheckSpellText (Info, action)
             local matched = ChangeCase(v, line, spos, l) and
                             CheckMatch(v, line, spos, l)
             if not matched then
-              --if v.word:find("лит", 1, true) then far.Show("CheckSpellText: matched", v.filename, line, spos, v.word, v.brim, matched) end
+              --[[
+              if v.word:find("лит", 1, true) then
+                far.Show("CheckSpellText: matched",
+                         v.filename, line, spos, v.word, v.brim, matched)
+              end
+              --]]
+
               bpos, bend = Bound:find(line, p)
               if bpos and bend >= bpos then
                 v.brim = line:sub(bpos, bend) or ""
+
               end
 
               local brim = v.brim
@@ -961,33 +1099,57 @@ function unit.CheckSpellText (Info, action)
                     v.word = word..brim
                     matched = ChangeCase(v, line, spos, l) and
                               CheckMatch(v, line, spos, l)
+
                   end -- while
 
                   if matched then
                     v.brim = brim
                     bend = bpos + brim:len() -- TODO: CHECK
+
                   end
                 end
 
                 v.word = word -- (restore)
 
-                --if v.word:find("лит", 1, true) then far.Show("CheckSpellText: brim", v.filename, line, spos, v.word, v.brim, matched) end
+                --[[
+                if v.word:find("лит", 1, true) then
+                  far.Show("CheckSpellText: brim",
+                           v.filename, line, spos, v.word, v.brim, matched)
+                end
+                --]]
+
               end
-            end
+
+            end -- not matched
 
             if matched then
               local h = v.handle
               local isOk = not h.spell or h:spell(v.word)
-              --if v.word:find("лит", 1, true) then far.Show("CheckSpellText: spell", v.filename, line, spos, v.word, v.brim, matched) end
+
+              --[[
+              if v.word:find("лит", 1, true) then
+                far.Show("CheckSpellText: spell",
+                         v.filename, line, spos, v.word, v.brim, matched)
+              end
+              --]]
+
               local brim = v.brim
               if brim ~= "" then
-                --if v.word:find("лит", 1, true) then far.Show("CheckSpellText: spell", v.filename, line, spos, v.word, v.brim, matched) end
+                --[[
+                if v.word:find("лит", 1, true) then
+                  far.Show("CheckSpellText: spell",
+                           v.filename, line, spos, v.word, v.brim, matched)
+                end
+                --]]
+
                 local asOk = h:spell(v.word..brim)
                 if asOk then
                   isOk = asOk -- word with brim
                   p = bend + 1 -- skip brim also
+
                 else
                   p = send + 1 -- skip word only
+
                 end
               end
 
@@ -1008,12 +1170,14 @@ function unit.CheckSpellText (Info, action)
                   editor.SetPosition(id, Info)
 
                   return true
+
                 end
 
                 break
               end
 
               if v.BreakOnMatch then break end
+
             end -- matched
 
           end -- Enabled
@@ -1023,35 +1187,47 @@ function unit.CheckSpellText (Info, action)
       end -- word ~= ""
 
     end -- while
+
   end -- for data
 
   return true
+
 end ---- CheckSpellText
 
 end -- do
 
 function unit.FindNext ()
+
   return unit.CheckSpellText(EditorGetInfo(), "next")
+
 end ---- FindNext
 
 function unit.FindPrev ()
+
   return unit.CheckSpellText(EditorGetInfo(), "prev")
+
 end ---- FindPrev
 
 function unit.SwitchCheck ()
+
   --far.Show"SwitchCheck"
+
   config.Enabled = not config.Enabled
   if not config.Enabled then
     unit.RemoveAllColors()
+
   end
 
   return editor.Redraw()
+
 end ---- SwitchCheck
 
 function unit.UnloadSpell ()
+
   unit.RemoveAllColors()
 
   unit.Free()
+
 end
 
 ---------------------------------------- main
@@ -1076,6 +1252,7 @@ local function reloadEditorConfig (id, kind) --| editors
   if not current or current.kind ~= 'focus' then
     editors.current = nil                   -- reset
     current = { start = 0, finish = -1, }   -- new config
+
   end
   if current then current.kind = kind end
   editors.current = current
@@ -1088,6 +1265,7 @@ local function reloadEditorConfig (id, kind) --| editors
   --handleEvent('reloadEditor', current)
 
   --far.Message(editors.current.type, "Editor")
+
 end -- reloadEditorConfig
 
 Event {
@@ -1096,6 +1274,7 @@ Event {
 
   action = function (id, event)
   --action = function (id, event, param)
+
     local eid = id
     if event == EE_READ then
       reloadEditorConfig(eid, 'load')
@@ -1110,10 +1289,13 @@ Event {
     elseif event == EE_REDRAW then
       if config.Enabled then
         CheckSpellText(EditorGetInfo(), "all")
+
       end
 
     end
+
   end,
+
 } -- Event "EditorEvent"
 
 Event {
@@ -1121,6 +1303,7 @@ Event {
   description = "LuaSpell: Exit",
 
   action = unit.UnloadSpell,
+
 } -- Event "ExitFAR"
 
 end -- do
@@ -1132,7 +1315,9 @@ Macro {
   area = "Editor",
   key = MacroKeys.CheckSpell,
   description = "LuaSpell: Check spell",
+
   action = unit.CheckSpell,
+
 } ---
 end
 
@@ -1141,7 +1326,9 @@ Macro {
   area = "Editor",
   key = MacroKeys.SwitchCheck,
   description = "LuaSpell: Spell on/off",
+
   action = unit.SwitchCheck,
+
 } ---
 end
 
@@ -1150,13 +1337,17 @@ Macro {
   area = "Editor",
   key = config.MacroKeys.UnloadSpell,
   description = "LuaSpell: Unload",
+
   action = unit.UnloadSpell,
+
 } ---
 end
 
 -- DEPRECATED
 if MacroKeys.Misspelling then
+
   MacroKeys.FindNext = MacroKeys.Misspelling
+
 end
 
 if MacroKeys.FindNext then
@@ -1164,7 +1355,9 @@ Macro {
   area = "Editor",
   key = MacroKeys.FindNext,
   description = "LuaSpell: Find next",
+
   action = unit.FindNext,
+
 } ---
 end
 
@@ -1173,7 +1366,9 @@ Macro {
   area = "Editor",
   key = MacroKeys.FindPrev,
   description = "LuaSpell: Find previous",
+
   action = unit.FindPrev,
+
 } ---
 end
 

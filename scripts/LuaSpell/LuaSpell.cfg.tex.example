@@ -2,26 +2,35 @@
 
 ---------------------------------------- TeX dictionary class
 local TTexDic = {
+
   --Guid       = win.Uuid(""),
+
 }
 local MTexDic = { __index = TTexDic }
 
 function TTexDic:spell (s)
+
   return true
+
 end ---- spell
 
 function TTexDic:free ()
+
   --return
+
 end ---- spell
 
 local function newTexDic (dic)
 
   local self = {
+
     dic = dic,
     --handle = h,
+
   } --- self
 
   return setmetatable(self, MTexDic)
+
 end -- newTexDic
 
 ---------------------------------------- Data
@@ -34,11 +43,15 @@ local CharsSet = "["..CharEnum.."]+"
 
 ----------------------------------------
 local function DicMatch (dic, word, line, p, l)
+
   dic.word = word:gsub("́", "") -- Очистка слова
+
   return true
+
 end -- DicMatch
 
 local function TexMatch (dic, word, line, p, l)
+
   local s = p > 1 and line:sub(p - 1, p - 1)
   if not s then return end
 
@@ -49,15 +62,18 @@ local function TexMatch (dic, word, line, p, l)
   if s ~= '{' then return end
   local epos = p + word:len() --+ 1
   if epos > line:len() then return end
+
   local e = line:sub(epos, epos)
   if not e then return end
   if e ~= '}' then return end
 
   return true
+
 end -- TexMatch
 
 ----------------------------------------
 Data = {
+
   -- Settings:
   Enabled = false,
 
@@ -78,6 +94,7 @@ Data = {
 
     FindNext    = "ShiftF12",
     FindPrev    = "LCtrlShiftF12",
+
   },
 
   -- Dictionaries:
@@ -89,16 +106,21 @@ Data = {
     find = [[/^[A-Za-z]+$/]],
     --find = [[/^\\|^\{[a-zA-Z]+\}$/]], -- \\command or {group}
     match = TexMatch,
+
     color = {
       Flags = Flag4BIT,
       ForegroundColor = 0xF,
       BackgroundColor = 0xC,
+
     },
+
     Enabled = true,
     BreakOnMatch = true, -- if match is ok then break anyway end
 
     new = newTexDic, -- constructor for custom dictionary
+
   },
+
   { lng = "rus",
     desc = "Russian",
     Type = "Hunspell",
@@ -106,13 +128,18 @@ Data = {
     --find = [[/[А-Яа-яЁё]+/]],
     find = [[/^[А-Яа-яЁё]{2,}$/]],
     match = DicMatch,
+
     color = {
       Flags = Flag4BIT,
       ForegroundColor = 0xF,
       BackgroundColor = 0x4,
+
     },
+
     Enabled = true,
+
   },
+
   { lng = "eng",
     desc = "English",
     Type = "Hunspell",
@@ -120,13 +147,17 @@ Data = {
     --find = [[/[A-Za-z]+/]],
     find = [[/^[A-Za-z]{2,}$/]],
     match = DicMatch,
+
     color = {
       Flags = Flag4BIT,
       ForegroundColor = 0xF,
       BackgroundColor = 0x5,
+
     },
+
     Enabled = true,
+
   },
 
-} --
+} -- Data
 --------------------------------------------------------------------------------

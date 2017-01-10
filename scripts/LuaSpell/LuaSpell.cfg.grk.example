@@ -8,12 +8,16 @@ local CharsSet = "["..CharEnum.."]+"
 
 ----------------------------------------
 local function DicMatch (dic, word, line, p, l)
+
   dic.word = word:gsub("́", "") -- Очистка слова
+
   return true
+
 end -- DicMatch
 
 ----------------------------------------
 Data = {
+
   -- Settings:
   Enabled = false,
 
@@ -34,6 +38,7 @@ Data = {
 
     FindNext    = "ShiftF12",
     FindPrev    = "LCtrlShiftF12",
+
   },
 
   -- Dictionaries:
@@ -44,13 +49,18 @@ Data = {
     --find = [[/[А-Яа-яЁё]+/]],
     find = [[/^[А-Яа-яЁё]{2,}$/]],
     match = DicMatch,
+
     color = {
       Flags = Flag4BIT,
       ForegroundColor = 0xF,
       BackgroundColor = 0x4,
+
     },
+
     Enabled = true,
+
   },
+
   { lng = "eng",
     desc = "English",
     Type = "Hunspell",
@@ -58,13 +68,18 @@ Data = {
     --find = [[/[A-Za-z]+/]],
     find = [[/^[A-Za-z]{2,}$/]],
     match = DicMatch,
+
     color = {
       Flags = Flag4BIT,
       ForegroundColor = 0xF,
       BackgroundColor = 0x5,
+
     },
+
     Enabled = true,
+
   },
+
   { lng = "grk",
     desc = "Greek",
     Type = "Hunspell",
@@ -72,13 +87,16 @@ Data = {
     --find = [[/[΄-Ͽἀ-῿]+/]],
     find = [[/^[΄-Ͽἀ-῿]{2,}$/]],
     match = DicMatch,
+
     color = {
       Flags = Flag4BIT,
       ForegroundColor = 0xF,
       BackgroundColor = 0x6,
     },
+
     Enabled = true,
+
   },
 
-} --
+} -- Data
 --------------------------------------------------------------------------------

@@ -30,7 +30,7 @@ local MMain = { __index = TMain }
 ---------------------------------------- Methods
 
 function TMain:free ()
-  local self = self
+
   local h = self.handle
   if not h then return end
 
@@ -38,65 +38,86 @@ function TMain:free ()
   self.words = nil
 
   self.handle = nil
+
 end ---- free
 
 function TMain:match (s)
+
   if not s then return end
 
   local t = self.words
   if not t then return end
 
   return t[s] or false
+
 end ---- match
 
 function TMain:spell (s)
+
   local t = self.words
   if not t or not s then return end
 
   local ret = t[s]
   if self.allowed then
     ret = ret and 1 or 2
+
   else
     ret = ret and 0 or 2
+
   end
 
   return ret ~= 0, ret == 2 and 'warn' or nil
+
 end ---- spell
 
 --[[
 function TMain:get_dic_encoding ()
+
   return
+
 end -- get_dic_encoding
 
 --local tinsert = table.insert
 
 function TMain:suggest (word)
+
   return nil
+
 end ---- suggest
 
 function TMain:analyze (word)
+
   return nil
+
 end ---- analyze
 
 function TMain:stem (word)
+
   return nil
+
 end ---- stem
 
 function TMain:generate (word, word2)
+
   return nil
+
 end ---- generate
 --]]
 
 ---------------------------------------- -- word
 
 function TMain:add_word (word, example)
+
   local t = self.words
   t[word] = -1 -- Признак добавленного слова
+
 end ---- add_word
 
 function TMain:remove_word (word)
+
   local t = self.words
   t[word] = false -- Признак удалённого слова
+
 end ---- remove_word
 
 ---------------------------------------- -- file
@@ -115,6 +136,7 @@ do
   count    (number) - count of added words (but -1 - file not found).
 --]]
 function TMain:read_file (filepath, value, t, lines) --> (number)
+
   --local onlydic = onlydic == nil and true or onlydic
 
   local f = io.open(filepath, 'r')
@@ -130,19 +152,23 @@ function TMain:read_file (filepath, value, t, lines) --> (number)
       --logShow(s, "Header line")
       s = f:read('*l')
       if lines then lines[#lines + 1] = s end
+
     end
+
     if lines then lines.header_last = #lines end
     if s == nil then return 0 end -- Нет слов
+
   end
 
   -- Чтение списка слов:
   s = f:read('*l') -- first
-  if s == nil then return 0 end -- Нет слов
+  if s == nil or s:find("^%s*$") then return 0 end -- Нет слов
 
   if self.Type == "WordList" then
     if ssub(s, 1, 3) == u8BOM then
       s = ssub(s, 4, -1) -- Исключение UTF-8 BOM
       if lines then lines.is_bom = true end
+
     end
   end
 
@@ -157,6 +183,7 @@ function TMain:read_file (filepath, value, t, lines) --> (number)
     if lines then lines[#lines + 1] = s end
 
     s = f:read('*l') -- next
+
   end
 
   f:close()
@@ -165,16 +192,20 @@ function TMain:read_file (filepath, value, t, lines) --> (number)
   --if self.Type == "WordList" then far.Show(unpack(u)) end
 
   return count
+
 end ---- read_file
 
 end -- do
 
 function TMain:add_dic (dpath, key, n, name)
-  local n = n or 0
+
+  n = n or 0
+
   local count = self:read_file(dpath, n, self.words, nil)
   if count >= 0 then
     self.dics[n]   = name
     self.counts[n] = count
+
   end
 end ---- add_dic
 
@@ -192,9 +223,11 @@ end ---- add_dic
   self  (table) - dictionary context.
 --]]
 function unit.new (Info) --> (table)
+
   if not Info then return nil end
 
   local self = {
+
     handle      = true,
 
     --Info        = Info, -- данные
@@ -204,15 +237,18 @@ function unit.new (Info) --> (table)
 
     Type        = Info.Type,
     allowed     = Info.allowed,
+
   } --- self
 
   setmetatable(self, MMain)
 
   if Info.DicPath then
     self:add_dic(Info.DicPath, "", 0)
+
   end
 
   return self
+
 end -- new
 
 --------------------------------------------------------------------------------
