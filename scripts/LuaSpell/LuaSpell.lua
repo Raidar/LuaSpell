@@ -691,13 +691,13 @@ local function ShowMenu (strings, wordLen)
 
   end
 
-  local h = 1
+  local h --= 1
   local c = info.CurTabPos - info.LeftPos
   local r = info.CurLine - info.TopScreenLine
   local x = math.max(0, c - w - menuOverheadWidth + menuShadowWidth)
   x = (info.WindowSizeX - c) > (c + 2 - wordLen) and (c + 1) or x -- меню справа или слева от слова?
 
-  local y = 0
+  local y --= 0
   if (info.WindowSizeY - r - 1) > (r + 1) then -- меню сверху или снизу?
     -- снизу
     y = r + 2
@@ -902,10 +902,10 @@ function unit.CheckSpell ()
             local Index = ShowMenu(items, wLen)
             if Index then
               local send = spos + wLen
-              local s = line:sub(1, spos - 1)..
-                        items[Index]..
-                        line:sub(send, -1)
-              EditorSetLine(-1, 0, s, eol)
+              local sLine = line:sub(1, spos - 1)..
+                            items[Index]..
+                            line:sub(send, -1)
+              EditorSetLine(-1, 0, sLine, eol)
   
             end
           end
@@ -1080,9 +1080,9 @@ function unit.CheckSpellText (Info, action)
 
               local brim = v.brim
               if brim ~= "" then
-                local word = v.word
+                local vWord = v.word
+                v.word = vWord..brim
 
-                v.word = word..brim
                 matched = ChangeCase(v, line, spos, l) and
                           CheckMatch(v, line, spos, l)
 
@@ -1096,7 +1096,7 @@ function unit.CheckSpellText (Info, action)
                     brim = brim:sub(1, -2) or ""
                     if brim == "" then break end
 
-                    v.word = word..brim
+                    v.word = vWord..brim
                     matched = ChangeCase(v, line, spos, l) and
                               CheckMatch(v, line, spos, l)
 
@@ -1109,7 +1109,7 @@ function unit.CheckSpellText (Info, action)
                   end
                 end
 
-                v.word = word -- (restore)
+                v.word = vWord -- (restore)
 
                 --[[
                 if v.word:find("лит", 1, true) then

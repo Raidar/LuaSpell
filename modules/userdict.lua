@@ -144,7 +144,6 @@ function TMain:read_file (filepath, value, t, lines) --> (number)
   --if dpath:find("Stop_List", 1, true) then far.Show(dpath, key, n) end
 
   local s = ""
-  local lines = lines
 
   -- Пропуск заголовка:
   if self.Type == "UserDict" then
@@ -174,10 +173,9 @@ function TMain:read_file (filepath, value, t, lines) --> (number)
 
   --local u = {}
   local count = 0
-  local t, v = t, value
   while s do
     --logShow(s, "Word line")
-    t[s] = v
+    t[s] = value
     --u[#u + 1] = s
     count = count + 1
     if lines then lines[#lines + 1] = s end
