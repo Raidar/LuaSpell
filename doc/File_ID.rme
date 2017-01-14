@@ -1,0 +1,31 @@
+LuaSpell pack
+
+[Info]
+Ver. : 3.3.2.0
+Date : 2017-01-14
+Ware : Freeware
+Lic. : MIT
+Reqs : FAR + LuaFAR v.3.0.4575,
+       LuaFAR plugin v.3.0.0.2,
+       --LuaFAR context v.3.3.2.0
+Type : Macro for FAR Manager (Script package)
+Desc : LuaSpell package for FAR LuaMacro
+
+Auth : A.I. Rakhmatullin
+       / А.И. Рахматуллин
+Addr : RF, RT, Kazan
+       / РФ, РТ, Казань
+Copy : 2016/2017+
+
+Home : http://raidar.github.com/index.htm
+Link : http://raidar.github.com/Programs/FarScripts.htm#LuaSpell
+
+Repo : https://github.com/Raidar/LuaSpell
+
+[Anons]
+  A package to spell check using Hunspell and custom dictionaries.
+
+  Пакет для проверки орфографии с использованием
+словарей Hunspell и пользовательских словарей.
+
+―――――――
