@@ -24,6 +24,7 @@ unit.ScriptName = "UserDict"
 ---------------------------------------- Main class
 local TMain = {
   --Guid       = win.Uuid(""),
+
 }
 local MMain = { __index = TMain }
 
@@ -225,7 +226,6 @@ function unit.new (Info) --> (table)
   if not Info then return nil end
 
   local self = {
-
     handle      = true,
 
     --Info        = Info, -- данные

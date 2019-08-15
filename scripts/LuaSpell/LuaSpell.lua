@@ -256,9 +256,9 @@ local function CreateMain ()
   end
 
   for k = 1, n do
-    local v = config[k]
-    if type(v.match) == 'boolean' and v.match then
-      v.match = DefMatch
+    local cfg = config[k]
+    if type(cfg.match) == 'boolean' and cfg.match then
+      cfg.match = DefMatch
 
     end
   end
@@ -332,35 +332,35 @@ end -- NewHunspell
 
 function unit.InitHunspell (k)
 
-  local v = config[k]
-  local Path = v.path or config.Path
+  local cfg = config[k]
+  local Path = cfg.path or config.Path
 
-  v.filename = v.filename or v.lng or tostring(k)
-  if not v.Name then v.Name = v.filename end
-  if not v.dic then v.dic = v.filename..".dic" end
-  if not v.aff then v.aff = v.filename..".aff" end
-  if v.dic then v.dicpath = ExpandEnv(Path..v.dic) end
-  if v.aff then v.affpath = ExpandEnv(Path..v.aff) end
+  cfg.filename = cfg.filename or cfg.lng or tostring(k)
+  if not cfg.Name then cfg.Name = cfg.filename end
+  if not cfg.dic then cfg.dic = cfg.filename..".dic" end
+  if not cfg.aff then cfg.aff = cfg.filename..".aff" end
+  if cfg.dic then cfg.dicpath = ExpandEnv(Path..cfg.dic) end
+  if cfg.aff then cfg.affpath = ExpandEnv(Path..cfg.aff) end
 
-  if v.dicpath and v.dicpath ~= "" then
-    v.DicPath = v.StrToPath(v.dicpath)
+  if cfg.dicpath and cfg.dicpath ~= "" then
+    cfg.DicPath = cfg.StrToPath(cfg.dicpath)
 
   end
-  if v.affpath and v.affpath ~= "" then
-    v.AffPath = v.StrToPath(v.affpath)
+  if cfg.affpath and cfg.affpath ~= "" then
+    cfg.AffPath = cfg.StrToPath(cfg.affpath)
 
   end
 
   if hunspell and
-     v.dicpath and CheckFile(v.dicpath) and
-     v.affpath and CheckFile(v.affpath) then
-    v.handle = NewHunspell(k, v)
-    --v.coding = v.handle:get_dic_encoding()
+     cfg.dicpath and CheckFile(cfg.dicpath) and
+     cfg.affpath and CheckFile(cfg.affpath) then
+    cfg.handle = NewHunspell(k, cfg)
+    --cfg.coding = cfg.handle:get_dic_encoding()
 
-    --far.Show(v.handle, v.dic, v.find, v.coding)
-    --logShow(v, v.filename, "w d2")
+    --far.Show(cfg.handle, cfg.dic, cfg.find, cfg.coding)
+    --logShow(cfg, cfg.filename, "w d2")
 
-    if not v.handle then return false end
+    if not cfg.handle then return false end
 
     unit.Add_Dics(k)
 
@@ -391,34 +391,34 @@ end -- NewUserDict
 
 function unit.InitUserDict (k)
 
-  local v = config[k]
-  local Path = v.path or config.Path
+  local cfg = config[k]
+  local Path = cfg.path or config.Path
 
-  --v.filename = v.filename or tostring(k)
-  if not v.Name then v.Name = v.filename end
-  if not v.dicext then v.dicext = ".dic" end
-  if not v.dic and v.filename then v.dic = v.filename..v.dicext end
-  if v.dic then v.dicpath = ExpandEnv(Path..v.dic) end
-  if v.dicpath and v.dicpath ~= "" then
-    v.DicPath = v.StrToPath(v.dicpath)
+  --cfg.filename = cfg.filename or tostring(k)
+  if not cfg.Name then cfg.Name = cfg.filename end
+  if not cfg.dicext then cfg.dicext = ".dic" end
+  if not cfg.dic and cfg.filename then cfg.dic = cfg.filename..cfg.dicext end
+  if cfg.dic then cfg.dicpath = ExpandEnv(Path..cfg.dic) end
+  if cfg.dicpath and cfg.dicpath ~= "" then
+    cfg.DicPath = cfg.StrToPath(cfg.dicpath)
 
   end
 
   if userdict then
-    if (v.dicpath or "") ~= "" and
-       not CheckFile(v.dicpath) then
+    if (cfg.dicpath or "") ~= "" and
+       not CheckFile(cfg.dicpath) then
       return false
 
     end
 
-    v.handle = NewUserDict(k, v)
+    cfg.handle = NewUserDict(k, cfg)
 
-    if not v.handle then return false end
+    if not cfg.handle then return false end
 
     unit.Add_Dics(k)
 
-    --far.Show(v.handle, v.dic, v.find, v.coding)
-    --logShow(v, v.filename, "w d2")
+    --far.Show(cfg.handle, cfg.dic, cfg.find, cfg.coding)
+    --logShow(cfg, cfg.filename, "w d2")
 
     return true
 
@@ -432,37 +432,37 @@ end ---- InitUserDict
 
 function unit.InitDictionary (k)
 
-  local v = config[k]
+  local cfg = config[k]
   --local Path = config.Path
 
-  if v.StrToPath == false then
-    v.StrToPath = unit.StrToStr
+  if cfg.StrToPath == false then
+    cfg.StrToPath = unit.StrToStr
 
-  elseif v.StrToPath == nil or
-         v.StrToPath == true then
-    v.StrToPath = unit.StrToAnsi
-
-  end
-
-  v.Type = v.Type or "Hunspell"
-  if not v.WordType or
-     v.Type == "Hunspell" then
-    v.WordType = "enabled"
+  elseif cfg.StrToPath == nil or
+         cfg.StrToPath == true then
+    cfg.StrToPath = unit.StrToAnsi
 
   end
-  v.allowed = v.WordType == "enabled" --> true/false
 
-  v.WordCase = v.WordCase or "none"
+  cfg.Type = cfg.Type or "Hunspell"
+  if not cfg.WordType or
+     cfg.Type == "Hunspell" then
+    cfg.WordType = "enabled"
 
-  if v.Visible == false then return end
+  end
+  cfg.allowed = cfg.WordType == "enabled" --> true/false
 
-  if v.Enabled == nil then v.Enabled = true end
+  cfg.WordCase = cfg.WordCase or "none"
 
-  --if not v.Enabled then return end
+  if cfg.Visible == false then return end
+
+  if cfg.Enabled == nil then cfg.Enabled = true end
+
+  --if not cfg.Enabled then return end
 
   --FreeDictionary(k) -- DEBUG only
 
-  local Type = v.Type
+  local Type = cfg.Type
   if Type == "Hunspell" then
     unit.InitHunspell(k)
 
@@ -470,55 +470,55 @@ function unit.InitDictionary (k)
     unit.InitUserDict(k)
 
   else--if Type == "Custom" then
-    if type(v.new) == 'function' then
-      v.handle = v:new()
+    if type(cfg.new) == 'function' then
+      cfg.handle = cfg:new()
 
     end
-    --far.Show(k, v.handle)
+    --far.Show(k, cfg.handle)
 
   end
 
-  if v.handle and v.find then
-    v.regex = regex.new(v.find)
+  if cfg.handle and cfg.find then
+    cfg.regex = regex.new(cfg.find)
 
   end
 
-  if not v.handle then
-    v.Enabled = nil
+  if not cfg.handle then
+    cfg.Enabled = nil
 
   end
 end ---- InitDictionary
 
 function unit.FreeDictionary (k)
 
-  local v = config[k]
+  local cfg = config[k]
 
-  if v.handle then
-    v.handle:free()
+  if cfg.handle then
+    cfg.handle:free()
 
   end
 end ---- FreeDictionary
 
 function unit.Add_Dics (k)
 
-  local v = config[k]
+  local cfg = config[k]
 
-  local h = v.handle
+  local h = cfg.handle
   if not h or
      not h.add_dic then
     return
 
   end
 
-  local dics = v.dics
+  local dics = cfg.dics
   local tp = type(dics)
   if tp == 'table' then
-    local Path, Ext = v.path or config.Path, v.dicext
+    local Path, Ext = cfg.path or config.Path, cfg.dicext
     for i, dic in ipairs(dics) do
       local path = ExpandEnv(Path..dic..Ext)
       if CheckFile(path) then
         --if dic == "Vort_Media" then far.Show(dic) end
-        h:add_dic(v.StrToPath(path), "", i)
+        h:add_dic(cfg.StrToPath(path), "", i)
 
       end
     end
@@ -526,7 +526,7 @@ function unit.Add_Dics (k)
     return unit.Add_DirDics(k, dics.path, dics.mask, dics.match, #dics + 1)
 
   --elseif then
-  --  return unit.Add_DirDics(k, v.dics_mask, v.dics_match, 1)
+  --  return unit.Add_DirDics(k, cfg.dics_mask, cfg.dics_match, 1)
 
   end
 end -- Add_Dics
@@ -538,16 +538,16 @@ function unit.Add_DirDics (k, path, mask, match, n)
 
   end
 
-  local v = config[k]
+  local cfg = config[k]
 
-  local h = v.handle
+  local h = cfg.handle
   if not h or
      not h.add_dic then
     return
 
   end
 
-  path = ExpandEnv(path or v.path or config.Path)
+  path = ExpandEnv(path or cfg.path or config.Path)
   return unit.Add_ByMask(path, mask, match, h, "", n)
 
 end ---- Add_DirDics
@@ -685,9 +685,9 @@ local function ShowMenu (strings, wordLen)
   local w = 0
   local Items = {}
   for k = 1, #strings do
-    local v = strings[k]
-    w = math.max(w, v:len())
-    tinsert(Items, { Flags = 0, Text = v })
+    local s = strings[k]
+    w = math.max(w, s:len())
+    tinsert(Items, { Flags = 0, Text = s })
 
   end
 
@@ -753,12 +753,11 @@ end -- ShowMenu
 --]]
 local function CheckMasks (cfg, name) --> (bool | nil)
 
-  local v = cfg
-  if not v then return nil end
-  if not v.Enabled or not v.handle then return false end
+  if not cfg then return nil end
+  if not cfg.Enabled or not cfg.handle then return false end
 
-  return not v.masks or
-         (checkValueOver(name, v.masks) and true or false)
+  return not cfg.masks or
+         (checkValueOver(name, cfg.masks) and true or false)
 
 end -- CheckMasks
 unit.CheckMasks = CheckMasks
@@ -767,19 +766,18 @@ unit.CheckMasks = CheckMasks
 -- Преобразование слова по регистру букв.
 local function ChangeCase (cfg, line, pos, no) --> (bool, bool | nil)
 
-  local v = cfg
-  --if not v then return nil end
-  --if not v.Enabled or not v.handle then return false end
+  --if not cfg then return nil end
+  --if not cfg.Enabled or not cfg.handle then return false end
 
-  local WordCase = v.WordCase
+  local WordCase = cfg.WordCase
   if WordCase == "lower" then
-    v.word = v.word:lower()
+    cfg.word = cfg.word:lower()
 
   elseif WordCase == "upper" then
-    v.word = v.word:upper()
+    cfg.word = cfg.word:upper()
 
   elseif type(WordCase) == 'function' then
-    v:WordCase(cfg, line, pos, no)
+    cfg:WordCase(cfg, line, pos, no)
 
   else
     return true, false
@@ -789,6 +787,25 @@ local function ChangeCase (cfg, line, pos, no) --> (bool, bool | nil)
   return true, true -- changed
 
 end -- ChangeCase
+
+-- Check word length.
+-- Проверка слова по длине.
+local function CheckLength (cfg, line, pos, no)
+
+  local len = cfg.word:len()
+  if cfg.WordMinLen and len < cfg.WordMinLen then
+    return false
+
+  end
+
+  if cfg.WordMaxLen and len > cfg.WordMaxLen then
+    return false
+
+  end
+
+  return true
+
+end -- CheckLength
 
 -- Check word for match.
 -- Проверка слова на соответствие.
@@ -802,15 +819,15 @@ end -- ChangeCase
 --]]
 local function CheckMatch (cfg, line, pos, no) --> (bool | nil)
 
-  local v = cfg
-  --if not v then return nil end
-  --if not v.Enabled or not v.handle then return false end
+  --if not cfg then return nil end
+  --if not cfg.Enabled or not cfg.handle then return false end
 
-  if v.match and
-     not v:match(v.word, line, pos, no) then
+  if cfg.match and
+     not cfg:match(cfg.word, line, pos, no) then
     --[[
-    if v.word:find("Main", 1, true) then
-      far.Show("CheckMatch: cfg", v.filename, line, spos, v.word, matched)
+    if cfg.word:find("Main", 1, true) then
+      far.Show("CheckMatch: cfg", cfg.filename, line, spos, cfg.word, matched)
+
     end
     --]]
 
@@ -818,12 +835,13 @@ local function CheckMatch (cfg, line, pos, no) --> (bool | nil)
 
   end
 
-  local h = v.handle
+  local h = cfg.handle
   if h.match and
-     not h:match(v.word) then
+     not h:match(cfg.word) then
     --[[
-    if v.word:find("Main", 1, true) then
-      far.Show("CheckMatch: handle", v.filename, line, spos, v.word, matched)
+    if cfg.word:find("Main", 1, true) then
+      far.Show("CheckMatch: handle", cfg.filename, line, spos, cfg.word, matched)
+
     end
     --]]
 
@@ -831,11 +849,12 @@ local function CheckMatch (cfg, line, pos, no) --> (bool | nil)
 
   end
 
-  if v.regex and
-     not v.regex:match(v.word) then
+  if cfg.regex and
+     not cfg.regex:match(cfg.word) then
     --[[
-    if v.word:find("Main", 1, true) then
-      far.Show("CheckMatch: regex", v.filename, line, spos, v.word, matched)
+    if cfg.word:find("Main", 1, true) then
+      far.Show("CheckMatch: regex", cfg.filename, line, spos, cfg.word, matched)
+
     end
     --]]
 
@@ -876,26 +895,38 @@ function unit.CheckSpell ()
   --far.Show("CheckSpell", line, word, spos)
 
   for k = 1, config.n do
-    local v = config[k]
-    v.masked = CheckMasks(v, fname)
+    local cfg = config[k]
+    cfg.masked = CheckMasks(cfg, fname)
 
-    if v.masked then
-      --v.Info = Info
-      v.word = word
+    if cfg.masked then
+      --cfg.Info = Info
+      cfg.word = word
 
-      --far.Show("CheckSpell", line, word, spos, v.Enabled, v.handle)
+      --far.Show("CheckSpell", line, word, spos, cfg.Enabled, cfg.handle)
 
-      local matched = ChangeCase(v, line, spos, l) and
-                      CheckMatch(v, line, spos, l)
-      --far.Show("CheckSpell", line, spos, v.word, matched)
+      local matched = ChangeCase(cfg, line, spos, l) and
+                      CheckLength(cfg, line, spos, l) and
+                      CheckMatch(cfg, line, spos, l)
+      --far.Show("CheckSpell", line, spos, cfg.word, matched)
 
       if matched then
-        --if v.word:find("Main", 1, true) then far.Show("CheckSpell", v.filename, line, spos, v.word, matched) end
-        local h = v.handle
-        local w = v.word
+        --[[
+        if cfg.word:find("Main", 1, true) then
+          far.Show("CheckSpell", cfg.filename, line, spos, cfg.word, matched)
+
+        end
+        --]]
+        local h = cfg.handle
+        local w = cfg.word
         if h.suggest and
            (not h.spell or not h:spell(w)) then
-          --if w:find("Main", 1, true) then far.Show("CheckSpell", v.filename, line, spos, w, matched) end
+          --[[
+          if w:find("Main", 1, true) then
+           far.Show("CheckSpell", cfg.filename, line, spos, w, matched)
+
+          end
+          --]]
+
           local items = h:suggest(w)
           if config.EmptyList or #items > 0 then
             local wLen = word:len()
@@ -913,7 +944,7 @@ function unit.CheckSpell ()
           break
         end
 
-        if v.BreakOnMatch then break end
+        if cfg.BreakOnMatch then break end
 
       end -- matched
 
@@ -1024,10 +1055,10 @@ function unit.CheckSpellText (Info, action)
 
   local masked = false
   for k = 1, config.n do
-    local v = config[k]
-    --v.Info = Info
-    v.masked = CheckMasks(v, fname)
-    if v.masked then masked = true end
+    local cfg = config[k]
+    --cfg.Info = Info
+    cfg.masked = CheckMasks(cfg, fname)
+    if cfg.masked then masked = true end
 
   end
   if not masked then return false end
@@ -1053,38 +1084,39 @@ function unit.CheckSpellText (Info, action)
         --far.Show("CheckSpellText", config.CheckSet, line, word, spos, send)
 
         for k = 1, config.n do
-          local v = config[k]
+          local cfg = config[k]
 
           -- TODO: extract to function CheckConfigSpell
-          if v.masked then
-            v.word = word
-            v.brim = ""
+          if cfg.masked then
+            cfg.word = word
+            cfg.brim = ""
 
             local bpos, bend -- for brim find
 
-            local matched = ChangeCase(v, line, spos, l) and
-                            CheckMatch(v, line, spos, l)
+            local matched = ChangeCase(cfg, line, spos, l) and
+                            CheckLength(cfg, line, spos, l) and
+                            CheckMatch(cfg, line, spos, l)
             if not matched then
               --[[
-              if v.word:find("лит", 1, true) then
+              if cfg.word:find("лит", 1, true) then
                 far.Show("CheckSpellText: matched",
-                         v.filename, line, spos, v.word, v.brim, matched)
+                         cfg.filename, line, spos, cfg.word, cfg.brim, matched)
               end
               --]]
 
               bpos, bend = Bound:find(line, p)
               if bpos and bend >= bpos then
-                v.brim = line:sub(bpos, bend) or ""
+                cfg.brim = line:sub(bpos, bend) or ""
 
               end
 
-              local brim = v.brim
+              local brim = cfg.brim
               if brim ~= "" then
-                local vWord = v.word
-                v.word = vWord..brim
+                local vWord = cfg.word
+                cfg.word = vWord..brim
 
-                matched = ChangeCase(v, line, spos, l) and
-                          CheckMatch(v, line, spos, l)
+                matched = ChangeCase(cfg, line, spos, l) and
+                          CheckMatch(cfg, line, spos, l)
 
                 if not matched and Cuted then
                   local c = 0
@@ -1096,25 +1128,25 @@ function unit.CheckSpellText (Info, action)
                     brim = brim:sub(1, -2) or ""
                     if brim == "" then break end
 
-                    v.word = vWord..brim
-                    matched = ChangeCase(v, line, spos, l) and
-                              CheckMatch(v, line, spos, l)
+                    cfg.word = vWord..brim
+                    matched = ChangeCase(cfg, line, spos, l) and
+                              CheckMatch(cfg, line, spos, l)
 
                   end -- while
 
                   if matched then
-                    v.brim = brim
+                    cfg.brim = brim
                     bend = bpos + brim:len() -- TODO: CHECK
 
                   end
                 end
 
-                v.word = vWord -- (restore)
+                cfg.word = vWord -- (restore)
 
                 --[[
-                if v.word:find("лит", 1, true) then
+                if cfg.word:find("лит", 1, true) then
                   far.Show("CheckSpellText: brim",
-                           v.filename, line, spos, v.word, v.brim, matched)
+                           cfg.filename, line, spos, cfg.word, cfg.brim, matched)
                 end
                 --]]
 
@@ -1123,26 +1155,26 @@ function unit.CheckSpellText (Info, action)
             end -- not matched
 
             if matched then
-              local h = v.handle
-              local isOk = not h.spell or h:spell(v.word)
+              local h = cfg.handle
+              local isOk = not h.spell or h:spell(cfg.word)
 
               --[[
-              if v.word:find("лит", 1, true) then
+              if cfg.word:find("лит", 1, true) then
                 far.Show("CheckSpellText: spell",
-                         v.filename, line, spos, v.word, v.brim, matched)
+                         cfg.filename, line, spos, cfg.word, cfg.brim, matched)
               end
               --]]
 
-              local brim = v.brim
+              local brim = cfg.brim
               if brim ~= "" then
                 --[[
-                if v.word:find("лит", 1, true) then
+                if cfg.word:find("лит", 1, true) then
                   far.Show("CheckSpellText: spell",
-                           v.filename, line, spos, v.word, v.brim, matched)
+                           cfg.filename, line, spos, cfg.word, cfg.brim, matched)
                 end
                 --]]
 
-                local asOk = h:spell(v.word..brim)
+                local asOk = h:spell(cfg.word..brim)
                 if asOk then
                   isOk = asOk -- word with brim
                   p = bend + 1 -- skip brim also
@@ -1155,15 +1187,27 @@ function unit.CheckSpellText (Info, action)
 
               if not isOk then
                 if action == "all" then
-                  if v.color then
-                    --if v.word:find("Main`", 1, true) then far.Show("CheckSpellText", v.filename, line, spos, v.word, brim, matched) end
+                  if cfg.color then
+                    --[[
+                    if cfg.word:find("Main`", 1, true) then
+                      far.Show("CheckSpellText", cfg.filename, line, spos, cfg.word, brim, matched)
+
+                    end
+                    --]]
+
                     AddColor(id, l, spos, send,
-                             Mark_Current, v.color, prio, guid)
+                             Mark_Current, cfg.color, prio, guid)
                   end
 
                 elseif action == "next" or action == "prev" then
-                  --far.Show("CheckSpellText", v.filename, line, spos, v.word, brim, matched)
-                  --if v.word:find("Main", 1, true) then far.Show("CheckSpellText", v.filename, line, spos, v.word, brim, matched) end
+                  --far.Show("CheckSpellText", cfg.filename, line, spos, cfg.word, brim, matched)
+                  --[[
+                  if cfg.word:find("Main", 1, true) then
+                    far.Show("CheckSpellText", cfg.filename, line, spos, cfg.word, brim, matched)
+                    
+                  end
+                  --]]
+
                   Info.CurLine = l
                   Info.CurPos = spos
                   Info.CurTabPos = -1
@@ -1176,7 +1220,7 @@ function unit.CheckSpellText (Info, action)
                 break
               end
 
-              if v.BreakOnMatch then break end
+              if cfg.BreakOnMatch then break end
 
             end -- matched
 

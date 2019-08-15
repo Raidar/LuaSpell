@@ -1,0 +1,35 @@
+﻿.Language=Russian,Russian (Русский)
+.PluginContents=Пакет LuaSpell
+.Options TabSize=4
+.Options CtrlColorChar=\
+.Options CtrlStartPosChar=¦
+
+@Contents
+$ #LuaSpell#: Пакет
+  LuaSpell — пакет для проверки орфографии в редакторе FAR Manager.
+
+  Пакет поддерживает словари, используемые Hunspell, а также словари
+OOoUserDict1 (пользовательский словарь OpenOffice) и WordList (список слов).
+Для Hunspell‑словарей используется библиотека hunspell из проекта luapower.
+
+  Ссылки:
+    ~Авторы проекта~@Authors@
+
+    ~Проект luapower~@http://luapower.com/@
+      ~Библиотека hunspell~@http://luapower.com/hunspell@
+
+@Help
+ ~LuaSpell~@Contents@
+ ~Авторы проекта / Благодарности~@Authors@
+
+@Authors
+$ #Авторы проекта#: LuaSpell
+  © 2014+, ~Aidar~@mailto:raidar@@yandex.ru@.
+
+  #Благодарности#
+  Спасибо ~zg~@@ за макрос \37spell.lua\- для проверки орфографии в редакторе,
+на основе которого был разработан пакет LuaSpell.
+  
+  Спасибо ВСЕМ за обсуждение, предложения и выявление ошибок.
+
+ ~Содержание~@Contents@

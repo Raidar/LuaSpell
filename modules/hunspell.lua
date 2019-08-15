@@ -83,7 +83,6 @@ int Hunspell_add_dic(Hunhandle *pHunspell, const char * dpath, const char * key)
 end ---- LoadLib
 ---------------------------------------- Main class
 local TMain = {
-
   --Guid       = win.Uuid(""),
 
 }
@@ -249,7 +248,6 @@ function unit.create (affpath, dicpath, key)
   ffi.gc(h, lib.Hunspell_destroy)
 
   local self = {
-
     handle = h,
 
   } --- self
